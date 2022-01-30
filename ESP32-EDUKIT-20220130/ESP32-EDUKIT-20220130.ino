@@ -20,7 +20,7 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
-const unsigned long UPDATE_INTERVAL_MS = 200;
+const unsigned long UPDATE_INTERVAL_MS = 1000;
 unsigned long lastUpdate = 0;
 
 // variable for storing the potentiometer value
@@ -30,7 +30,7 @@ BLECharacteristic* pWeightSensorCharacteristic = NULL;
 BLECharacteristic* pEncoderSensorCharacteristic = NULL;
 BLECharacteristic* pMotorActuatorCharacteristic = NULL;
 
-#define BLE_NAME "ESP32-TIMOR" //must match filters name in bluetoothterminal.js- navigator.bluetooth.requestDevice
+#define BLE_NAME "ESP32-EDUKIT2" //must match filters name in bluetoothterminal.js- navigator.bluetooth.requestDevice
 #define MY_ESP32_SERVICE_UUID                 "818796aa-2f20-11ec-8d3d-0242ac130003" //- must match optional services on navigator.bluetooth.requestDevice
 #define WEIGHT_SENSOR_CHARACTERISTIC_UUID     "818798d0-2f20-11ec-8d3d-0242ac130003" //- must match optional services on navigator.bluetooth.requestDevice
 #define ENCODER_L_SENSOR_CHARACTERISTIC_UUID  "818799c0-2f20-11ec-8d3d-0242ac130003" //- must match optional services on navigator.bluetooth.requestDevice
@@ -39,64 +39,70 @@ BLECharacteristic* pMotorActuatorCharacteristic = NULL;
 
 #define pinEncoder35 35
 
-#define DIR1PIN 18
-#define PWM1PIN 23
-#define DIR2PIN 19
-#define PWM2PIN 22
+#define DIR1PIN 13
+//#define PWM1PIN 23
+#define DIR2PIN 26
+//#define PWM2PIN 22
 
 uint16_t weight_value = 0;
 uint16_t encoder_value = 0;
 
 static volatile unsigned int encCnt35;
-static volatile bool __attachedINT35=false;
+static volatile bool __attachedINT35 = false;
 
 void enc35Changed()
-{ encCnt35++; }
+{
+  encCnt35++;
+}
 
 void resetEnc35()
-{ encCnt35=0; }
+{
+  encCnt35 = 0;
+}
 
 unsigned int readEnc35()
-{ return encCnt35; }
+{
+  return encCnt35;
+}
 
 void encoder_reset(int channel)
 {
-  switch(channel)
+  switch (channel)
   {
-    case 35: encCnt35=0; break;
+    case 35: encCnt35 = 0; break;
   }
 }
 unsigned int encoder(int channel)
 {
-  switch(channel)
+  switch (channel)
   {
     case 35: if (!__attachedINT35)
-    {
-      __attachedINT35=true;
-    // encoder INT0
-    encCnt35=0; // Clear slot counter
-    pinMode(pinEncoder35,INPUT_PULLUP);
-    attachInterrupt(35, enc35Changed, CHANGE);
-    // end encoder
-    }
-    return encCnt35;
-    break;
+      {
+        __attachedINT35 = true;
+        // encoder INT0
+        encCnt35 = 0; // Clear slot counter
+        pinMode(pinEncoder35, INPUT_PULLUP);
+        attachInterrupt(35, enc35Changed, CHANGE);
+        // end encoder
+      }
+      return encCnt35;
+      break;
   }
 }
-void encoder(int channel,int preloadValue)
+void encoder(int channel, int preloadValue)
 {
-  switch(channel)
+  switch (channel)
   {
     case 35: if (!__attachedINT35)
-    {
-      __attachedINT35=true;
-    // encoder INT0
-    pinMode(pinEncoder35,INPUT_PULLUP);
-    attachInterrupt(35, enc35Changed, CHANGE);
-    // end encoder
-    }
-    encCnt35=preloadValue; // Clear slot counter
-    break;
+      {
+        __attachedINT35 = true;
+        // encoder INT0
+        pinMode(pinEncoder35, INPUT_PULLUP);
+        attachInterrupt(35, enc35Changed, CHANGE);
+        // end encoder
+      }
+      encCnt35 = preloadValue; // Clear slot counter
+      break;
   }
 }
 
@@ -105,6 +111,8 @@ void move_backward();
 void spin_left();
 void spin_right();
 void stop_moving();
+bool _reset = false;
+uint8_t Round = 0;
 
 class MyCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pMotorActuatorCharacteristic) {
@@ -134,6 +142,19 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         {
           stop_moving();
         }
+        else if (value[0] == 0x55)
+        {
+          //          delay(3000);
+          stop_moving();
+          resetEnc35();
+          _reset = true;
+        }
+        else if (value[0] == 0x56)
+        {
+          //          delay(3000);
+          stop_moving();
+          resetEnc35();
+        }
         else
         {
           stop_moving();
@@ -147,12 +168,13 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 };
 
 void setup() {
+  pinMode(2, OUTPUT);
   pinMode(DIR1PIN, OUTPUT);
   pinMode(DIR2PIN, OUTPUT);
-  ledcSetup(0, 100, 12);
-  ledcSetup(1, 100, 12);
-  ledcAttachPin(PWM1PIN, 0);
-  ledcAttachPin(PWM2PIN, 1);
+  //  ledcSetup(0, 100, 12);
+  //  ledcSetup(1, 100, 12);
+  //  ledcAttachPin(PWM1PIN, 0);
+  //  ledcAttachPin(PWM2PIN, 1);
   pinMode(25, INPUT_PULLUP);
   attachInterrupt(25, resetEnc35, RISING);
   stop_moving();
@@ -193,7 +215,7 @@ void loop() {
   {
     lastUpdate = millis();
 
-    weight_value = map(analogRead(34),0,4095,0,1000);
+    weight_value = map(analogRead(34), 0, 4095, 0, 1000);
     encoder_value = encoder(35);
 
     Serial.println("Weight value: ");
@@ -203,44 +225,59 @@ void loop() {
     Serial.println("Encoder value: ");
     Serial.println(encoder_value);
     Serial.println();
-    
+
     pWeightSensorCharacteristic->setValue((uint8_t*)&weight_value, 2);
     pEncoderSensorCharacteristic->setValue((uint8_t*)&encoder_value, 2);
 
     pWeightSensorCharacteristic->notify();
     pEncoderSensorCharacteristic->notify();
+    if (_reset)
+    {
+      if (Round == 3) {
+        Serial.println("Restarting...");
+        digitalWrite(2, LOW);
+        _reset = false;
+        Round = 0;
+        ESP.restart();
+      }
+      else {
+        Serial.println("Reset is on...");
+        digitalWrite(2, HIGH);
+        Round++;
+      }
+    }
   }
 }
 void move_forward()
 {
-  digitalWrite(DIR1PIN, LOW);
-  digitalWrite(DIR2PIN, LOW);
-  ledcWrite(0, 2047);
-  ledcWrite(1, 2047);
+  digitalWrite(DIR1PIN, HIGH);
+  digitalWrite(DIR2PIN, HIGH);
+  //  ledcWrite(0, 2047);
+  //  ledcWrite(1, 2047);
 }
 void move_backward()
 {
   digitalWrite(DIR1PIN, HIGH);
   digitalWrite(DIR2PIN, HIGH);
-  ledcWrite(0, 2047);
-  ledcWrite(1, 2047);
+  //  ledcWrite(0, 2047);
+  //  ledcWrite(1, 2047);
 }
 void spin_left()
 {
   digitalWrite(DIR1PIN, HIGH);
   digitalWrite(DIR2PIN, LOW);
-  ledcWrite(0, 2047);
-  ledcWrite(1, 2047);
+  //  ledcWrite(0, 2047);
+  //  ledcWrite(1, 2047);
 }
 void spin_right()
 {
   digitalWrite(DIR1PIN, LOW);
   digitalWrite(DIR2PIN, HIGH);
-  ledcWrite(0, 2047);
-  ledcWrite(1, 2047);
+  //  ledcWrite(0, 2047);
+  //  ledcWrite(1, 2047);
 }
 void stop_moving()
 {
-  ledcWrite(0, 0);
-  ledcWrite(1, 0);
+  digitalWrite(DIR1PIN, LOW);
+  digitalWrite(DIR2PIN, LOW);
 }
