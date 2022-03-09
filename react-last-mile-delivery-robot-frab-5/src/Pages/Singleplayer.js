@@ -1,52 +1,69 @@
 /*
-  * Singleplayer.js
-  *
-  *
-  *  Created on: Oct 8, 2021
-  *  Modified on: Jan 28, 2022
-  * 
-  *      Author: SakuranohanaTH
-  * 
+ * Singleplayer.js
+ *
+ *
+ *  Created on: Oct 8, 2021
+ *  Modified on: Mar 8, 2022
+ *
+ *      Author: SakuranohanaTH
+ *
  */
-import React, { useState, useEffect } from "react";   // include React Library
-import { useHistory } from "react-router-dom";      // include React Router DOM Library
+
+/* REACT LIBRARY TOPICS RELATED CODE BEGIN */
+
+import React, { useState, useEffect } from "react"; // include React Library
+import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { Button, Col, Row } from "react-bootstrap";
 import { useMediaQuery } from "react-responsive";
-import { AiOutlineMenu } from "react-icons/ai";   // include React Icons Library
-import { BiReset } from "react-icons/bi";   // include React Icons Library
-import { FaWeight, FaLink } from "react-icons/fa";   // include React Icons Library
-import { GiExitDoor, GiStopSign } from "react-icons/gi";   // include React Icons Library
+import { AiOutlineMenu } from "react-icons/ai"; // include React Icons Library
+import { BiReset } from "react-icons/bi"; // include React Icons Library
+import { FaWeight, FaLink } from "react-icons/fa"; // include React Icons Library
+import { GiExitDoor, GiStopSign } from "react-icons/gi"; // include React Icons Library
 import {
   ImArrowDown,
   ImArrowLeft,
   ImArrowRight,
   ImArrowUp,
-} from "react-icons/im";   // include React Icons Library
+} from "react-icons/im"; // include React Icons Library
 import {
   MdBluetooth,
   MdOutlineBluetoothDisabled,
   MdOutlineControlCamera,
-} from "react-icons/md";   // include React Icons Library
-import { RiPinDistanceFill } from "react-icons/ri";   // include React Icons Library
-import { SiProbot } from "react-icons/si";   // include React Icons Library
+} from "react-icons/md"; // include React Icons Library
+import { RiPinDistanceFill } from "react-icons/ri"; // include React Icons Library
+import { SiProbot } from "react-icons/si"; // include React Icons Library
 
-let bluetoothDevice = null;
-let weightSensorCharacteristic = null;
-let distanceEncoderSensorCharacteristic = null;
-let commandCharacteristic = null;
+let bluetoothDevice = null; // Bluetooth Device Name Global Variable
+let weightSensorCharacteristic = null; // Weight Sensor Characteristic Global Variable
+let distanceEncoderSensorCharacteristic = null; // Distance Encoder Sensor Characteristic Global Variable
+let commandCharacteristic = null; // Command Characteristic Global Variable
 
+/* EXPORT DEFAULT FUNCTION SINGLEPLAYER CODE BEGIN */
 export default function Singleplayer() {
+  /* CALL HISTORY BEGIN */
   const history = useHistory();
+
+  /* CALL HISTORY END */
+
+  /* BACK BUTTON EVENT ON BROWNSER CODE BEGIN */
   const onBackButtonEvent = async (event) => {
     event.preventDefault();
     await disconnectToBluetoothDevice();
-    history.push("/singleplayer");
+    history.push("/");
   };
-  const onExituttonEvent = async () => {
+
+  /* BACK BUTTON EVENT ON BROWNSER CODE END */
+
+  /* EXIT BUTTON EVENT ON SINGLEPLAYER UI CODE BEGIN */
+  const onExitButtonEvent = async () => {
     // event.preventDefault();
     await disconnectToBluetoothDevice();
     history.push("/");
   };
+
+  /* EXIT BUTTON EVENT ON SINGLEPLAYER UI CODE END */
+
+  /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE BEGIN */
   const onBeforeUnload = (event) => {
     // the method that will be used for both add and remove event
     event.preventDefault();
@@ -56,10 +73,15 @@ export default function Singleplayer() {
     disconnectToBluetoothDevice(); //Gecko + IE
     return confirmationMessage;
   };
+  /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE END */
+  /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE CODE BEGIN */
   const afterUnload = () => {
     disconnectToBluetoothDevice();
   };
 
+  /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE COED END */
+
+  /* DYNAMIC OF COMPONENT CODE BEGIN */
   useEffect(() => {
     window.addEventListener("popstate", onBackButtonEvent);
     window.addEventListener("beforeunload", onBeforeUnload);
@@ -70,22 +92,20 @@ export default function Singleplayer() {
       window.removeEventListener("popstate", onBackButtonEvent);
     };
   });
-  /*
-   *
-   * Delay/Sleep function
-   *
-   */
+  /* DYNAMIC OF COMPONENT CODE END */
+
+  /* DELAY FUNCTION CODE BEGIN */
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+  /* DELAY FUNCTION CODE END */
 
+  /* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE BEGIN */
   const stability_delay = 150;
 
-  /*
-   *
-   * Bluetooth related variables
-   *
-   */
+  /* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE END */
+
+  /* BLUETOOTH LOW ENEGRY RELATED VARIABLES CODE BEGIN */
   const [isBluetoothConnected, setIsBluetoothConnected] = useState(false);
   const [bluetoothDeviceName, setBluetoothDeviceName] =
     useState("Not connected");
@@ -101,7 +121,7 @@ export default function Singleplayer() {
   const spinRightCommand = 0x53;
   const backwardCommand = 0x51;
   const stopCommand = 0x54;
-  const restartCommand = 0x55;
+  // const restartCommand = 0x55;
 
   const [weightSensorValue, setWeightSensorValue] = useState(0);
   const [distanceEncoderSensorValue, setDistanceEncoderSensorValue] = useState(
@@ -116,6 +136,19 @@ export default function Singleplayer() {
   const [isDirectionButtonReleased, setIsDirectionButtonReleased] =
     useState(false);
 
+  async function onDisconnected(event) {
+    setWeightSensorValue(0);
+    setDistanceEncoderSensorValue((0).toFixed(1));
+
+    // await bluetoothDevice.gatt.disconnect();
+
+    weightSensorCharacteristic = null;
+    distanceEncoderSensorCharacteristic = null;
+    commandCharacteristic = null;
+    bluetoothDevice = null;
+    setBluetoothDeviceName("Not connected");
+    setIsBluetoothConnected(false);
+  }
   async function connectToBluetoothDevice() {
     if (!navigator.bluetooth) {
       alert(
@@ -138,7 +171,10 @@ export default function Singleplayer() {
           commandCharacteristicUUID,
         ],
       });
-
+      bluetoothDevice.addEventListener(
+        "gattserverdisconnected",
+        onDisconnected
+      );
       // //console.log("Connecting to GATT Server...");
 
       const server = await bluetoothDevice.gatt.connect();
@@ -198,7 +234,7 @@ export default function Singleplayer() {
     }
 
     try {
-      sendCommand(restartCommand);
+      // sendCommand(restartCommand);
       weightSensorCharacteristic.removeEventListener(
         "characteristicvaluechanged",
         handleWeightSensorNotifications
@@ -215,7 +251,7 @@ export default function Singleplayer() {
       setWeightSensorValue(0);
       setDistanceEncoderSensorValue((0).toFixed(1));
 
-      // await bluetoothDevice.gatt.disconnect();
+      await bluetoothDevice.gatt.disconnect();
 
       weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
@@ -224,6 +260,7 @@ export default function Singleplayer() {
       setBluetoothDeviceName("Not connected");
       setIsBluetoothConnected(false);
     } catch {
+      // sendCommand(restartCommand);
       setWeightSensorValue(0);
       setDistanceEncoderSensorValue((0).toFixed(1));
 
@@ -288,7 +325,7 @@ export default function Singleplayer() {
       }
     } catch {
       // await sendCommand(data);
-      await sendCommand(stopCommand);
+      // await sendCommand(stopCommand);
     }
   }
 
@@ -303,8 +340,8 @@ export default function Singleplayer() {
     setIsRightButtonPressed(true);
     setIsStopButtonPressed(true);
 
-    setWeightSensorValue(0);
-    setDistanceEncoderSensorValue((0).toFixed(1));
+    // setWeightSensorValue(0);
+    // setDistanceEncoderSensorValue((0).toFixed(1));
 
     await sendCommand(0x56);
 
@@ -315,8 +352,11 @@ export default function Singleplayer() {
     setIsStopButtonPressed(false);
   }
 
-  const isPortrait = useMediaQuery({ query: "(orientation: portrait)" });
+  /* BLUETOOTH LOW ENEGRY RELATED VARIABLES CODE END */
 
+  const isPortrait = useMediaQuery({ query: "(orientation: portrait)" }); // Check responsive.
+ 
+  /* Convert to HTML5 */
   return (
     <div className="vw-100 vh-100" style={{ backgroundColor: "#F7F6E7" }}>
       {isPortrait ? (
@@ -665,7 +705,7 @@ export default function Singleplayer() {
               </Row>
             </Col>
             <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
-              <Row
+              {/* <Row
                 className="p text-align-center text-white p-1 mx-0"
                 style={{ height: "15%", backgroundColor: "#000000" }}
               >
@@ -677,8 +717,8 @@ export default function Singleplayer() {
                 style={{ height: "35%", backgroundColor: "#FFF8F0" }}
               >
                 {weightSensorValue}
-                {/* 12345678.9 */}
-              </Row>
+                {/* 12345678.9 }
+              </Row> */}
               <Row
                 className="p text-align-center text-white p-1 mx-0"
                 style={{ height: "15%", backgroundColor: "#000000" }}
@@ -688,7 +728,7 @@ export default function Singleplayer() {
               </Row>
               <Row
                 className="p3 text-align-center p-1 mx-0 border border-dark"
-                style={{ height: "35%", backgroundColor: "#FFF8F0" }}
+                style={{ height: "85%", backgroundColor: "#FFF8F0" }}
               >
                 {bluetoothDeviceName}
               </Row>
@@ -703,12 +743,12 @@ export default function Singleplayer() {
               </Row>
               <Row
                 className="p6 text-align-center p-1 mx-0 border border-dark"
-                style={{ height: "35%", backgroundColor: "#FFF8F0" }}
+                style={{ height: "85%", backgroundColor: "#FFF8F0" }}
               >
                 {distanceEncoderSensorValue}
                 {/* 12345678.9 */}
               </Row>
-              <Row
+              {/* <Row
                 className="p text-align-center text-white p-1 mx-0"
                 style={{ height: "15%", backgroundColor: "#000000" }}
               >
@@ -719,7 +759,7 @@ export default function Singleplayer() {
                 style={{ height: "35%", backgroundColor: "#FFF8F0" }}
               >
                 -
-              </Row>
+              </Row> */}
             </Col>
             <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
               <Row
@@ -826,8 +866,8 @@ export default function Singleplayer() {
                     variant="danger"
                     size="sm"
                     onClick={async () => {
-                      await sendCommand(restartCommand);
-                      await onExituttonEvent();
+                      // await sendCommand(restartCommand);
+                      await onExitButtonEvent();
                     }}
                     disabled={
                       isDownButtonPressed ||
@@ -852,3 +892,4 @@ export default function Singleplayer() {
     </div>
   );
 }
+/* EXPORT DEFAULT FUNCTION SINGLEPLAYER CODE END */

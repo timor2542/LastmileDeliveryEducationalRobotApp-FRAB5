@@ -1,68 +1,89 @@
-import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+/*
+ * Multiplayer.js
+ *
+ *
+ *  Created on: Oct 8, 2021
+ *  Modified on: Mar 8, 2022
+ *
+ *      Author: SakuranohanaTH
+ *
+ */
+
+/* REACT LIBRARY TOPICS RELATED CODE BEGIN */
+
+import React, { useState, useEffect } from "react"; // include React Library
+import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { Button, Col, Row, Form } from "react-bootstrap";
 import { useMediaQuery } from "react-responsive";
 
-import { forwardRef } from 'react';
+/* INCLUDE FORWARD REFERENCE TO ADD ICON ON MATERIAL TABLE CODE BEGIN */
+import { forwardRef } from "react"; // include React Forward Reference Library
 
-import AddBox from '@material-ui/icons/AddBox';
-import ArrowDownward from '@material-ui/icons/ArrowDownward';
-import Check from '@material-ui/icons/Check';
-import ChevronLeft from '@material-ui/icons/ChevronLeft';
-import ChevronRight from '@material-ui/icons/ChevronRight';
-import Clear from '@material-ui/icons/Clear';
-import DeleteOutline from '@material-ui/icons/DeleteOutline';
-import Edit from '@material-ui/icons/Edit';
-import FilterList from '@material-ui/icons/FilterList';
-import FirstPage from '@material-ui/icons/FirstPage';
-import LastPage from '@material-ui/icons/LastPage';
-import Remove from '@material-ui/icons/Remove';
-import SaveAlt from '@material-ui/icons/SaveAlt';
-import Search from '@material-ui/icons/Search';
-import ViewColumn from '@material-ui/icons/ViewColumn';
-import RateReviewIcon from '@material-ui/icons/RateReview';
+import AddBox from "@material-ui/icons/AddBox";
+import ArrowDownward from "@material-ui/icons/ArrowDownward";
+import Check from "@material-ui/icons/Check";
+import ChevronLeft from "@material-ui/icons/ChevronLeft";
+import ChevronRight from "@material-ui/icons/ChevronRight";
+import Clear from "@material-ui/icons/Clear";
+import DeleteOutline from "@material-ui/icons/DeleteOutline";
+import Edit from "@material-ui/icons/Edit";
+import FilterList from "@material-ui/icons/FilterList";
+import FirstPage from "@material-ui/icons/FirstPage";
+import LastPage from "@material-ui/icons/LastPage";
+import Remove from "@material-ui/icons/Remove";
+import SaveAlt from "@material-ui/icons/SaveAlt";
+import Search from "@material-ui/icons/Search";
+import ViewColumn from "@material-ui/icons/ViewColumn";
+import RateReviewIcon from "@material-ui/icons/RateReview";
 
-import MaterialTable from 'material-table';
+import MaterialTable from "material-table";
 
-import { AiOutlineMenu } from "react-icons/ai";
-import { FaWeight, FaLink, FaHome, FaUsers } from "react-icons/fa";
-import { GiExitDoor, GiStopSign } from "react-icons/gi";
+/* INCLUDE FORWARD REFERENCE TO ADD ICON ON MATERIAL TABLE CODE END */
+
+import { AiOutlineMenu } from "react-icons/ai"; // include React Icons Library
+import { FaWeight, FaLink, FaHome, FaUsers } from "react-icons/fa"; // include React Icons Library
+import { GiExitDoor, GiStopSign } from "react-icons/gi"; // include React Icons Library
 import {
   ImArrowDown,
   ImArrowLeft,
   ImArrowRight,
   ImArrowUp,
-} from "react-icons/im";
+} from "react-icons/im"; // include React Icons Library
 import {
   MdBluetooth,
   MdOutlineBluetoothDisabled,
   MdOutlineControlCamera,
-} from "react-icons/md";
-import { RiPinDistanceFill } from "react-icons/ri";
-import { SiProbot } from "react-icons/si";
-import { MdPin, MdOutlineTimer } from "react-icons/md";
-import { db } from "../Firebase/Firebase";
-import get from "../universalHTTPRequests/get";
-let bluetoothDevice = null;
-let weightSensorCharacteristic = null;
-let distanceEncoderSensorCharacteristic = null;
-let commandCharacteristic = null;
+} from "react-icons/md"; // include React Icons Library
+import { RiPinDistanceFill } from "react-icons/ri"; // include React Icons Library
+import { SiProbot } from "react-icons/si"; // include React Icons Library
+import { MdPin, MdOutlineTimer } from "react-icons/md"; // include React Icons Library
+import { db } from "../Firebase/Firebase"; // include Firebase Library
+import get from "../universalHTTPRequests/get"; // include Firebase fetching Library
 
-let startTime = 0;
-let elapsedTime = 0;
-let intervalId = null;
+let bluetoothDevice = null; // Bluetooth Device Name Variable
+let weightSensorCharacteristic = null; // Weight Sensor Characteristic Variable
+let distanceEncoderSensorCharacteristic = null; // Distance Encoder Sensor Characteristic Variable
+let commandCharacteristic = null; // Command Characteristic Variable
 
+let startTime = 0; // Last Elaspsed Time Update Varaible
+let elapsedTime = 0; // Current Elaspsed Time Update Varaible
+let intervalId = null; // Interval to increase Time Variable
+
+/* EXPORT DEFAULT FUNCTION MULTIPLAYER CODE BEGIN */
 export default function Multiplayer() {
-  /* CALL HISTORY BEGIN */
+  /* CALL HISTORY CODE BEGIN */
   const history = useHistory();
 
+  /* CALL HISTORY CODE END */
+
+  /* TABLE ICON ON LEADERBOARD CODE BEGIN */
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
     Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
     Clear: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
     Delete: forwardRef((props, ref) => <DeleteOutline {...props} ref={ref} />),
     DetailPanel: forwardRef((props, ref) => (
-        <ChevronRight {...props} ref={ref} />
+      <ChevronRight {...props} ref={ref} />
     )),
     Edit: forwardRef((props, ref) => <Edit {...props} ref={ref} />),
     Export: forwardRef((props, ref) => <SaveAlt {...props} ref={ref} />),
@@ -71,21 +92,25 @@ export default function Multiplayer() {
     LastPage: forwardRef((props, ref) => <LastPage {...props} ref={ref} />),
     NextPage: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
     PreviousPage: forwardRef((props, ref) => (
-        <ChevronLeft {...props} ref={ref} />
+      <ChevronLeft {...props} ref={ref} />
     )),
     ResetSearch: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
     Search: forwardRef((props, ref) => <Search {...props} ref={ref} />),
     SortArrow: forwardRef((props, ref) => (
-        <ArrowDownward {...props} ref={ref} />
+      <ArrowDownward {...props} ref={ref} />
     )),
     ThirdStateCheck: forwardRef((props, ref) => (
-        <Remove {...props} ref={ref} />
+      <Remove {...props} ref={ref} />
     )),
     ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />),
     RateReview: forwardRef((props, ref) => (
-        <RateReviewIcon {...props} ref={ref} />
+      <RateReviewIcon {...props} ref={ref} />
     )),
-};
+  };
+  
+  /* TABLE ICON ON LEADERBOARD CODE END */
+
+  /* BACK BUTTON EVENT ON BROWNSER CODE BEGIN */
   async function onBackButtonEvent(event) {
     event.preventDefault();
     // your logic
@@ -101,8 +126,11 @@ export default function Multiplayer() {
     }
     await disconnectToBluetoothDeviceImmediately();
     setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    history.push("/multiplayer");
+    history.push("/");
   }
+  /* BACK BUTTON EVENT ON BROWNSER CODE END */
+
+   /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE BEGIN */
   const onExituttonEvent = async () => {
     // event.preventDefault();
     // your logic
@@ -119,6 +147,8 @@ export default function Multiplayer() {
     }
     history.push("/");
   };
+   /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE END */
+     /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE BEGIN */
   const onBeforeUnload = async (event) => {
     // the method that will be used for both add and remove event
     event.preventDefault();
@@ -128,6 +158,8 @@ export default function Multiplayer() {
     await disconnectToBluetoothDeviceImmediately();
     return confirmationMessage;
   };
+    /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE END */
+  /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE CODE BEGIN */
   const afterUnload = async () => {
     // event.preventDefault();
     await disconnectToBluetoothDeviceImmediately();
@@ -143,10 +175,8 @@ export default function Multiplayer() {
     }
   };
 
-  // useEffect(() => {
-  //   return () => {
-  //   };
-  // });
+  /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE COED END */
+   /* DYNAMIC OF COMPONENT CODE BEGIN */
   useEffect(() => {
     window.addEventListener("beforeunload", onBeforeUnload);
     window.addEventListener("unload", afterUnload);
@@ -157,13 +187,27 @@ export default function Multiplayer() {
       window.removeEventListener("popstate", onBackButtonEvent);
     };
   });
+/* DYNAMIC OF COMPONENT CODE END */
+// MULTIPLAYER_MODE_
+// MULTIPLAYER_MODE_HOMEPAGE
+// MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE
+// MULTIPLAYER_MODE_HOST_FILLROOMNAME_PAGE
+// MULTIPLAYER_MODE_PLAYER_CONTROLPANEL_PAGE
+// MULTIPLAYER_MODE_HOST_CONTROLPANEL_PAGE
+// MULTIPLAYER_MODE_LOADINGPAGE
+// MULTIPLAYER_MODE_ERRORHOSTLOSTPAGE
+// MULTIPLAYER_MODE_ERRORGAMEALREADYSTARTEDPAGE
+// MULTIPLAYER_MODE_ERRORGOTDISCONNECTEDPAGE
+// MULTIPLAYER_MODE_ERRORNEEDPINPAGE
+// MULTIPLAYER_MODE_ERRORNEEDGROUPNAMEPLAYERPAGE
+// MULTIPLAYER_MODE_ERRORNEEDROOMNAMEHOSTPAGE
+// MULTIPLAYER_MODE_ERRORPLAYERNAMETAKEN_PAGE
+// MULTIPLAYER_MODE_ERRORHOSTNOTFOUNDPAGE
+// MULTIPLAYER_MODE_ERROROTHERPAGE
 
-  const [FSMPage, setFSMPage] = useState(
-    "MULTIPLAYER_MODE_HOMEPAGE"
-  );
-  // MULTIPLAYER_MODE_PLAYER_CONTROLPANEL_PAGE
-  // MULTIPLAYER_MODE_HOMEPAGE
-  // MULTIPLAYER_MODE_HOST_CONTROLPANEL_PAGE
+/* FINITE STATE MACHINE DEFAULT DEFINED PAGE CODE BEGIN */
+  const [FSMPage, setFSMPage] = useState("MULTIPLAYER_MODE_HOMEPAGE");
+/* FINITE STATE MACHINE DEFAULT DEFINED PAGE CODE END */
 
   /* DELAY/SLEEP FUNCTION TOPICS RELATED CODE BEGIN */
 
@@ -174,9 +218,11 @@ export default function Multiplayer() {
   /* DELAY/SLEEP FUNCTION TOPICS RELATED CODE END */
 
   /* BLUETOOTH TOPICS RELATED CODE BEGIN */
-
+/* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE BEGIN */
   const stability_delay = 150;
+/* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE END */
 
+  /* BLUETOOTH LOW ENEGRY RELATED VARIABLES CODE BEGIN */
   const [isBluetoothConnected, setIsBluetoothConnected] = useState(false);
   const [bluetoothDeviceName, setBluetoothDeviceName] =
     useState("Not connected");
@@ -192,7 +238,7 @@ export default function Multiplayer() {
   const spinRightCommand = 0x53;
   const backwardCommand = 0x51;
   const stopCommand = 0x54;
-  const restartCommand = 0x55;
+  // const restartCommand = 0x55;
 
   const [weightSensorValue, setWeightSensorValue] = useState(0);
   const [distanceEncoderSensorValue, setDistanceEncoderSensorValue] = useState(
@@ -206,6 +252,21 @@ export default function Multiplayer() {
   const [isStopButtonPressed, setIsStopButtonPressed] = useState(false);
   const [isDirectionButtonReleased, setIsDirectionButtonReleased] =
     useState(false);
+
+  async function onDisconnected(event) {
+    setWeightSensorValue(0);
+    setDistanceEncoderSensorValue((0).toFixed(1));
+
+    // await bluetoothDevice.gatt.disconnect();
+
+    weightSensorCharacteristic = null;
+    distanceEncoderSensorCharacteristic = null;
+    commandCharacteristic = null;
+    bluetoothDevice = null;
+    setBluetoothDeviceName("Not connected");
+    setIsBluetoothConnected(false);
+  }
+
   async function connectToBluetoothDevice() {
     if (!navigator.bluetooth) {
       return;
@@ -226,6 +287,10 @@ export default function Multiplayer() {
         ],
       });
 
+      bluetoothDevice.addEventListener(
+        "gattserverdisconnected",
+        onDisconnected
+      );
       // ////console.log("Connecting to GATT Server...");
 
       const server = await bluetoothDevice.gatt.connect();
@@ -291,7 +356,7 @@ export default function Multiplayer() {
     }
 
     try {
-      sendCommand(restartCommand);
+      // sendCommand(restartCommand);
       weightSensorCharacteristic.removeEventListener(
         "characteristicvaluechanged",
         handleWeightSensorNotifications
@@ -308,7 +373,7 @@ export default function Multiplayer() {
       setWeightSensorValue(0);
       setDistanceEncoderSensorValue((0).toFixed(1));
 
-      // await bluetoothDevice.gatt.disconnect();
+      await bluetoothDevice.gatt.disconnect();
 
       weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
@@ -358,7 +423,7 @@ export default function Multiplayer() {
     }
 
     try {
-      sendCommand(restartCommand);
+      // sendCommand(restartCommand);
       weightSensorCharacteristic.removeEventListener(
         "characteristicvaluechanged",
         handleWeightSensorNotifications
@@ -375,7 +440,7 @@ export default function Multiplayer() {
       setWeightSensorValue(0);
       setDistanceEncoderSensorValue((0).toFixed(1));
 
-      // await bluetoothDevice.gatt.disconnect();
+      await bluetoothDevice.gatt.disconnect();
 
       weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
@@ -480,7 +545,7 @@ export default function Multiplayer() {
       }
     } catch {
       // await sendCommand(data);
-      await sendCommand(stopCommand);
+      // await sendCommand(stopCommand);
     }
   }
   async function resetAllValue() {
@@ -505,13 +570,12 @@ export default function Multiplayer() {
     setIsStopButtonPressed(false);
   }
 
-  /* BLUETOOTH TOPICS RELATED CODE END */
+  /* BLUETOOTH LOW ENEGRY RELATED VARIABLES CODE END */
 
-  /* BLUETOOTH TOPICS RELATED CODE BEGIN */
+  const isPortrait = useMediaQuery({ query: "(orientation: portrait)" }); // Check responsive.
+ 
 
-  const isPortrait = useMediaQuery({ query: "(orientation: portrait)" });
-
-  /* BLUETOOTH TOPICS RELATED CODE BEGIN */
+  /* SESSION PLAYER LOGIN CODE BEGIN */
 
   const [PIN, setPIN] = useState("");
   const [getPIN, setGetPIN] = useState("");
@@ -669,7 +733,8 @@ export default function Multiplayer() {
 
   const [gotAlreadyHostLeftDetected, setGotAlreadyHostLeftDetected] =
     useState(false);
-
+ /* SESSION PLAYER LOGIN CODE END */
+ /* STOPWATCH TIMER CONTROL CODE BEGIN */
   const [timeIsActive, setTimeIsActive] = useState(false);
   const [timeIsPaused, setTimeIsPaused] = useState(false);
   const [stopwatchElapsedTime, setStopwatchElapsedTime] = useState({
@@ -722,6 +787,8 @@ export default function Multiplayer() {
     clearInterval(intervalId);
   }
 
+ /* STOPWATCH TIMER CONTROL CODE END */
+  /* FETCHING DATA ON FIREBASE CONTROL CODE BEGIN */
   let fetchData = () => {
     async function onSuccess(response) {
       let data = response.val();
@@ -803,12 +870,14 @@ export default function Multiplayer() {
         } else {
           // console.log(data.players);
           if (data.players && data.hostOnline) {
-            let leaderboardArray = Object.entries(data.players).map((data) => data[1]);
+            let leaderboardArray = Object.entries(data.players).map(
+              (data) => data[1]
+            );
             leaderboardArray = leaderboardArray.map((data) => {
               return {
                 ...data,
-              }
-            })
+              };
+            });
             setPlayersData(leaderboardArray);
           } else if (!data.players && data.hostOnline) {
             setPlayersData([]);
@@ -904,7 +973,7 @@ export default function Multiplayer() {
     setGotHostLeftDetected(false);
   }
   // }
-
+  // if screen is portrait, stop motor on robot while connnected.
   if (isPortrait) {
     if (isBluetoothConnected && bluetoothDeviceName !== "Not connected") {
       sendCommand(stopCommand);
@@ -912,13 +981,10 @@ export default function Multiplayer() {
   }
 
   /* PORTRAIT RELATED CODE END */
-  // console.log(isBluetoothConnected);
-  // const [finishStatus, setFinishStatus] = useState(false);
+  /* BACK BUTTON DETECTION TO REMOVE DATA IN FIREBASE CODE BEGIN */
   useEffect(() => {
     // eslint-disable-next-line
     history.block(async () => {
-      // console.disableYellowBox = true;
-      // console.log("Go back.")
       if (getInClassRoom) {
         if (isHost) {
           db.ref("gameSessions/" + getPIN).remove();
@@ -930,7 +996,9 @@ export default function Multiplayer() {
       }
     });
   });
+  /* BACK BUTTON DETECTION TO REMOVE DATA IN FIREBASE CODE END */
 
+  /* FETCHING DATA ON FIREBASE CONTROL CODE END */
   /* FINITE STATE MACHINE PAGE CODE BEGIN */
 
   if (FSMPage === "MULTIPLAYER_MODE_HOMEPAGE") {
@@ -1862,7 +1930,7 @@ export default function Multiplayer() {
                       variant="danger"
                       size="sm"
                       onClick={async () => {
-                        await sendCommand(restartCommand);
+                        // await sendCommand(restartCommand);
                         await onExituttonEvent();
                       }}
                       disabled={
@@ -2079,19 +2147,27 @@ export default function Multiplayer() {
               >
                 {roomHostName}
               </Col>
-              </Row>
+            </Row>
             <Row
               className="p-1 mx-0  border border-dark"
               style={{ height: "65%", backgroundColor: "#D3DEDC" }}
             >
               <MaterialTable
-              icons={tableIcons}
-                title= {roomHostName + "'s Players Detail"}
+                icons={tableIcons}
+                title={roomHostName + "'s Players Detail"}
                 columns={[
                   { title: "Group Name", field: "groupName" },
                   { title: "Robot Name", field: "deviceName" },
-                  { title: "Weight (kg.)", field: "weightSensorValue", type: "numeric" },
-                  { title: "Distance (cm.)", field: "distanceSensorValue", type: "numeric" },
+                  {
+                    title: "Weight (kg.)",
+                    field: "weightSensorValue",
+                    type: "numeric",
+                  },
+                  {
+                    title: "Distance (cm.)",
+                    field: "distanceSensorValue",
+                    type: "numeric",
+                  },
                 ]}
                 data={playersData}
                 options={{
@@ -2904,3 +2980,4 @@ export default function Multiplayer() {
   }
 }
 /* FINITE STATE MACHINE PAGE CODE END */
+/* EXPORT DEFAULT FUNCTION MULTIPLAYER CODE END */

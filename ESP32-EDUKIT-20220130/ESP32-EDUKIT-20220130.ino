@@ -30,7 +30,7 @@ BLECharacteristic* pWeightSensorCharacteristic = NULL;
 BLECharacteristic* pEncoderSensorCharacteristic = NULL;
 BLECharacteristic* pMotorActuatorCharacteristic = NULL;
 
-#define BLE_NAME "ESP32-EDUKIT2" //must match filters name in bluetoothterminal.js- navigator.bluetooth.requestDevice
+#define BLE_NAME "ESP32-EDUKIT1" //must match filters name in bluetoothterminal.js- navigator.bluetooth.requestDevice
 #define MY_ESP32_SERVICE_UUID                 "818796aa-2f20-11ec-8d3d-0242ac130003" //- must match optional services on navigator.bluetooth.requestDevice
 #define WEIGHT_SENSOR_CHARACTERISTIC_UUID     "818798d0-2f20-11ec-8d3d-0242ac130003" //- must match optional services on navigator.bluetooth.requestDevice
 #define ENCODER_L_SENSOR_CHARACTERISTIC_UUID  "818799c0-2f20-11ec-8d3d-0242ac130003" //- must match optional services on navigator.bluetooth.requestDevice
@@ -38,6 +38,7 @@ BLECharacteristic* pMotorActuatorCharacteristic = NULL;
 #define MOTOR_ACTUATOR_CHARACTERISTIC_UUID    "81879be6-2f20-11ec-8d3d-0242ac130003" //- must match optional services on navigator.bluetooth.requestDevice
 
 #define pinEncoder35 35
+#define BUZZER_PIN 27
 
 #define DIR1PIN 13
 //#define PWM1PIN 23
@@ -111,15 +112,13 @@ void move_backward();
 void spin_left();
 void spin_right();
 void stop_moving();
+void sound(int freq, uint32_t time);
 bool _reset = false;
 uint8_t Round = 0;
 
 class MyCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pMotorActuatorCharacteristic) {
       std::string value = pMotorActuatorCharacteristic->getValue();
-      if (value.length() > 0) {
-        pMotorActuatorCharacteristic->setValue(value); // must add seperator \n for it to register on BLE terminal
-      }
       if (value.length() == 1)
       {
         if (value[0] == 0x50)
@@ -167,10 +166,35 @@ class MyCallbacks: public BLECharacteristicCallbacks {
     }
 };
 
+class MyServerCallbacks: public BLEServerCallbacks {
+  void onConnect(BLEServer *pServer){
+        digitalWrite(2, HIGH);
+        stop_moving();
+        sound(1000, 100);
+        sound(2000, 100);
+        sound(3000, 100);
+        sound(4000, 100);
+        sound(5000, 100);
+        sound(0, 0);
+  }
+  void onDisconnect(BLEServer *pServer){
+        digitalWrite(2, LOW);
+        stop_moving();
+        sound(5000, 100);
+        sound(4000, 100);
+        sound(3000, 100);
+        sound(2000, 100);
+        sound(1000, 100);
+        sound(0, 0);
+        ESP.restart();
+  }
+};
 void setup() {
   pinMode(2, OUTPUT);
   pinMode(DIR1PIN, OUTPUT);
   pinMode(DIR2PIN, OUTPUT);
+  ledcSetup(4, 2000, 8);
+  ledcAttachPin(BUZZER_PIN, 4);
   //  ledcSetup(0, 100, 12);
   //  ledcSetup(1, 100, 12);
   //  ledcAttachPin(PWM1PIN, 0);
@@ -182,6 +206,7 @@ void setup() {
 
   BLEDevice::init(BLE_NAME);
   pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
   BLEService *pService = pServer->createService(MY_ESP32_SERVICE_UUID);
   pWeightSensorCharacteristic = pService->createCharacteristic(
                                   WEIGHT_SENSOR_CHARACTERISTIC_UUID,
@@ -231,21 +256,6 @@ void loop() {
 
     pWeightSensorCharacteristic->notify();
     pEncoderSensorCharacteristic->notify();
-    if (_reset)
-    {
-      if (Round == 3) {
-        Serial.println("Restarting...");
-        digitalWrite(2, LOW);
-        _reset = false;
-        Round = 0;
-        ESP.restart();
-      }
-      else {
-        Serial.println("Reset is on...");
-        digitalWrite(2, HIGH);
-        Round++;
-      }
-    }
   }
 }
 void move_forward()
@@ -280,4 +290,9 @@ void stop_moving()
 {
   digitalWrite(DIR1PIN, LOW);
   digitalWrite(DIR2PIN, LOW);
+}
+void sound(int freq, uint32_t time) {
+  ledcWriteTone(4, freq);
+  delay(time);
+  //  ledcWriteTone(4, 0);
 }

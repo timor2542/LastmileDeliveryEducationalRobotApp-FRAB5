@@ -1,46 +1,44 @@
 /*
-  * Homepage.js
-  *
-  *
-  *  Created on: Oct 8, 2021
-  *  Modified on: Jan 28, 2022
-  * 
-  *      Author: SakuranohanaTH
-  * 
+ * Homepage.js
+ *
+ *
+ *  Created on: Oct 8, 2021
+ *  Modified on: Mar 8, 2022
+ *
+ *      Author: SakuranohanaTH
+ *
  */
 
 /* REACT LIBRARY TOPICS RELATED CODE BEGIN */
 
-import React, { useEffect } from "react";             // include React Library
-import { useHistory } from "react-router-dom";      // include React Router DOM Library
-import { FaUser, FaUsers } from "react-icons/fa";   // include React Icons Library
+import React, { useEffect } from "react"; // include React Library
+import { useHistory } from "react-router-dom"; // include React Router DOM Library
+import { FaUser, FaUsers } from "react-icons/fa"; // include React Icons Library
 import { Button, Col, Row } from "react-bootstrap"; // include React Bootstrap Library
-import { useMediaQuery } from "react-responsive";   // include React Responsive Library
+import { useMediaQuery } from "react-responsive"; // include React Responsive Library
 
 /* REACT LIBRARY TOPICS RELATED CODE END */
 
-
+/* EXPORT DEFAULT FUNCTION HOMEPAGE CODE BEGIN */
 export default function Homepage() {
-  
-  const isPortrait = useMediaQuery({ query: "(orientation: portrait)" });   // Check responsive.
+  const isPortrait = useMediaQuery({ query: "(orientation: portrait)" }); // Check responsive.
   const history = useHistory(); // Call window.history of React
 
-/* Back button preventation */
+  /* BACK BUTTON EVENT TO HOMEPAGE CODE BEGIN */
   const onBackButtonEvent = async (event) => {
     event.preventDefault();
     history.push("/");
   };
 
-
   useEffect(() => {
-    window.addEventListener("popstate", onBackButtonEvent);       // Attach window.popstate detection when user get in.
+    window.addEventListener("popstate", onBackButtonEvent); // Attach window.popstate detection when user get in.
     return () => {
-      window.removeEventListener("popstate", onBackButtonEvent);  // Detach window.popstate detection when user leave.
+      window.removeEventListener("popstate", onBackButtonEvent); // Detach window.popstate detection when user leave.
     };
   });
+  /* BACK BUTTON EVENT TO HOMEPAGE CODE END */
 
-
-/* Convert to HTML5 */
+  /* Convert to HTML5 */
   return (
     <div
       className="vw-100 vh-100 mx-0"
@@ -100,7 +98,6 @@ export default function Homepage() {
                   xs={6}
                 >
                   <Button
-                    // variant="contained"
                     size="lg"
                     color="primary"
                     style={{ width: "75%", height: "100%" }}
@@ -118,7 +115,6 @@ export default function Homepage() {
                   xs={6}
                 >
                   <Button
-                    // variant="contained"
                     size="lg"
                     color="primary"
                     style={{ width: "75%", height: "100%" }}
@@ -136,7 +132,8 @@ export default function Homepage() {
                 style={{ height: "15%" }}
                 xs={12}
               >
-                Version 1.0.1  |  29 Jan 2022  |  © {new Date().getFullYear()} FRAB5 Thesis.
+                Version 1.3 | 8 Mar 2022 | © {new Date().getFullYear()} FRAB5
+                Thesis.
               </Row>
             </Col>
           </Row>
@@ -145,3 +142,5 @@ export default function Homepage() {
     </div>
   );
 }
+
+/* EXPORT DEFAULT FUNCTION HOMEPAGE CODE END */
