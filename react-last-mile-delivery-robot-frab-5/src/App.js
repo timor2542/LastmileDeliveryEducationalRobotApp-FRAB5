@@ -16,6 +16,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import Multiplayer from "./Pages/Multiplayer";
 import Homepage from "./Pages/Homepage";
 import Singleplayer from "./Pages/Singleplayer";
+import SingleplayerNew from "./Pages/SingleplayerNew";
 
 import "./App.css";
 const useStyles = makeStyles({
@@ -55,6 +56,10 @@ export default function App() {
         <Route
           path="/singleplayer"
           render={(props) => <Singleplayer {...props} />}
+        />
+        <Route
+          path="/singleplayernew"
+          render={(props) => <SingleplayerNew {...props} />}
         />
         <Route
           path="/multiplayer"

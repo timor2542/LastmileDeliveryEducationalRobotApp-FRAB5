@@ -15,7 +15,7 @@ import React, { useState, useEffect } from "react"; // include React Library
 import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { Button, Col, Row, Form } from "react-bootstrap";
 import { useMediaQuery } from "react-responsive";
-
+import { FullScreen, useFullScreenHandle } from "react-full-screen";
 /* INCLUDE FORWARD REFERENCE TO ADD ICON ON MATERIAL TABLE CODE BEGIN */
 import { forwardRef } from "react"; // include React Forward Reference Library
 
@@ -41,6 +41,8 @@ import MaterialTable from "material-table";
 /* INCLUDE FORWARD REFERENCE TO ADD ICON ON MATERIAL TABLE CODE END */
 
 import { AiOutlineMenu } from "react-icons/ai"; // include React Icons Library
+import {RiArrowGoBackFill} from "react-icons/ri";
+import { BsArrowsFullscreen, BsFullscreenExit } from "react-icons/bs"; 
 import { FaWeight, FaLink, FaHome, FaUsers } from "react-icons/fa"; // include React Icons Library
 import { GiExitDoor, GiStopSign } from "react-icons/gi"; // include React Icons Library
 import {
@@ -61,7 +63,7 @@ import { db } from "../Firebase/Firebase"; // include Firebase Library
 import get from "../universalHTTPRequests/get"; // include Firebase fetching Library
 
 let bluetoothDevice = null; // Bluetooth Device Name Variable
-let weightSensorCharacteristic = null; // Weight Sensor Characteristic Variable
+// let weightSensorCharacteristic = null; // Weight Sensor Characteristic Variable
 let distanceEncoderSensorCharacteristic = null; // Distance Encoder Sensor Characteristic Variable
 let commandCharacteristic = null; // Command Characteristic Variable
 
@@ -71,6 +73,8 @@ let intervalId = null; // Interval to increase Time Variable
 
 /* EXPORT DEFAULT FUNCTION MULTIPLAYER CODE BEGIN */
 export default function Multiplayer() {
+  const handle = useFullScreenHandle();
+  const [version, setVersion] = useState("1.4.0");
   /* CALL HISTORY CODE BEGIN */
   const history = useHistory();
 
@@ -107,7 +111,7 @@ export default function Multiplayer() {
       <RateReviewIcon {...props} ref={ref} />
     )),
   };
-  
+
   /* TABLE ICON ON LEADERBOARD CODE END */
 
   /* BACK BUTTON EVENT ON BROWNSER CODE BEGIN */
@@ -130,7 +134,7 @@ export default function Multiplayer() {
   }
   /* BACK BUTTON EVENT ON BROWNSER CODE END */
 
-   /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE BEGIN */
+  /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE BEGIN */
   const onExituttonEvent = async () => {
     // event.preventDefault();
     // your logic
@@ -147,8 +151,8 @@ export default function Multiplayer() {
     }
     history.push("/");
   };
-   /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE END */
-     /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE BEGIN */
+  /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE END */
+  /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE BEGIN */
   const onBeforeUnload = async (event) => {
     // the method that will be used for both add and remove event
     event.preventDefault();
@@ -158,7 +162,7 @@ export default function Multiplayer() {
     await disconnectToBluetoothDeviceImmediately();
     return confirmationMessage;
   };
-    /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE END */
+  /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE END */
   /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE CODE BEGIN */
   const afterUnload = async () => {
     // event.preventDefault();
@@ -176,7 +180,7 @@ export default function Multiplayer() {
   };
 
   /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE COED END */
-   /* DYNAMIC OF COMPONENT CODE BEGIN */
+  /* DYNAMIC OF COMPONENT CODE BEGIN */
   useEffect(() => {
     window.addEventListener("beforeunload", onBeforeUnload);
     window.addEventListener("unload", afterUnload);
@@ -187,27 +191,27 @@ export default function Multiplayer() {
       window.removeEventListener("popstate", onBackButtonEvent);
     };
   });
-/* DYNAMIC OF COMPONENT CODE END */
-// MULTIPLAYER_MODE_
-// MULTIPLAYER_MODE_HOMEPAGE
-// MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE
-// MULTIPLAYER_MODE_HOST_FILLROOMNAME_PAGE
-// MULTIPLAYER_MODE_PLAYER_CONTROLPANEL_PAGE
-// MULTIPLAYER_MODE_HOST_CONTROLPANEL_PAGE
-// MULTIPLAYER_MODE_LOADINGPAGE
-// MULTIPLAYER_MODE_ERRORHOSTLOSTPAGE
-// MULTIPLAYER_MODE_ERRORGAMEALREADYSTARTEDPAGE
-// MULTIPLAYER_MODE_ERRORGOTDISCONNECTEDPAGE
-// MULTIPLAYER_MODE_ERRORNEEDPINPAGE
-// MULTIPLAYER_MODE_ERRORNEEDGROUPNAMEPLAYERPAGE
-// MULTIPLAYER_MODE_ERRORNEEDROOMNAMEHOSTPAGE
-// MULTIPLAYER_MODE_ERRORPLAYERNAMETAKEN_PAGE
-// MULTIPLAYER_MODE_ERRORHOSTNOTFOUNDPAGE
-// MULTIPLAYER_MODE_ERROROTHERPAGE
+  /* DYNAMIC OF COMPONENT CODE END */
+  // MULTIPLAYER_MODE_
+  // MULTIPLAYER_MODE_HOMEPAGE
+  // MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE
+  // MULTIPLAYER_MODE_HOST_FILLROOMNAME_PAGE
+  // MULTIPLAYER_MODE_PLAYER_CONTROLPANEL_PAGE
+  // MULTIPLAYER_MODE_HOST_CONTROLPANEL_PAGE
+  // MULTIPLAYER_MODE_LOADINGPAGE
+  // MULTIPLAYER_MODE_ERRORHOSTLOSTPAGE
+  // MULTIPLAYER_MODE_ERRORGAMEALREADYSTARTEDPAGE
+  // MULTIPLAYER_MODE_ERRORGOTDISCONNECTEDPAGE
+  // MULTIPLAYER_MODE_ERRORNEEDPINPAGE
+  // MULTIPLAYER_MODE_ERRORNEEDGROUPNAMEPLAYERPAGE
+  // MULTIPLAYER_MODE_ERRORNEEDROOMNAMEHOSTPAGE
+  // MULTIPLAYER_MODE_ERRORPLAYERNAMETAKEN_PAGE
+  // MULTIPLAYER_MODE_ERRORHOSTNOTFOUNDPAGE
+  // MULTIPLAYER_MODE_ERROROTHERPAGE
 
-/* FINITE STATE MACHINE DEFAULT DEFINED PAGE CODE BEGIN */
+  /* FINITE STATE MACHINE DEFAULT DEFINED PAGE CODE BEGIN */
   const [FSMPage, setFSMPage] = useState("MULTIPLAYER_MODE_HOMEPAGE");
-/* FINITE STATE MACHINE DEFAULT DEFINED PAGE CODE END */
+  /* FINITE STATE MACHINE DEFAULT DEFINED PAGE CODE END */
 
   /* DELAY/SLEEP FUNCTION TOPICS RELATED CODE BEGIN */
 
@@ -218,9 +222,9 @@ export default function Multiplayer() {
   /* DELAY/SLEEP FUNCTION TOPICS RELATED CODE END */
 
   /* BLUETOOTH TOPICS RELATED CODE BEGIN */
-/* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE BEGIN */
-  const stability_delay = 150;
-/* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE END */
+  /* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE BEGIN */
+  const stability_delay = 1;
+  /* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE END */
 
   /* BLUETOOTH LOW ENEGRY RELATED VARIABLES CODE BEGIN */
   const [isBluetoothConnected, setIsBluetoothConnected] = useState(false);
@@ -228,7 +232,7 @@ export default function Multiplayer() {
     useState("Not connected");
 
   const myESP32ServiceUUID = "818796aa-2f20-11ec-8d3d-0242ac130003";
-  const weightSensorCharacteristicUUID = "818798d0-2f20-11ec-8d3d-0242ac130003";
+  // const weightSensorCharacteristicUUID = "818798d0-2f20-11ec-8d3d-0242ac130003";
   const distanceEncoderSensorCharacteristicUUID =
     "818799c0-2f20-11ec-8d3d-0242ac130003";
   const commandCharacteristicUUID = "81879be6-2f20-11ec-8d3d-0242ac130003";
@@ -259,7 +263,7 @@ export default function Multiplayer() {
 
     // await bluetoothDevice.gatt.disconnect();
 
-    weightSensorCharacteristic = null;
+    // weightSensorCharacteristic = null;
     distanceEncoderSensorCharacteristic = null;
     commandCharacteristic = null;
     bluetoothDevice = null;
@@ -281,7 +285,7 @@ export default function Multiplayer() {
         filters: [{ namePrefix: "ESP32" }],
         optionalServices: [
           myESP32ServiceUUID,
-          weightSensorCharacteristicUUID,
+          // weightSensorCharacteristicUUID,
           distanceEncoderSensorCharacteristicUUID,
           commandCharacteristicUUID,
         ],
@@ -299,9 +303,9 @@ export default function Multiplayer() {
       const service = await server.getPrimaryService(myESP32ServiceUUID);
 
       // ////console.log("Getting Characteristic...");
-      weightSensorCharacteristic = await service.getCharacteristic(
-        weightSensorCharacteristicUUID
-      );
+      // weightSensorCharacteristic = await service.getCharacteristic(
+      //   weightSensorCharacteristicUUID
+      // );
       distanceEncoderSensorCharacteristic = await service.getCharacteristic(
         distanceEncoderSensorCharacteristicUUID
       );
@@ -309,13 +313,13 @@ export default function Multiplayer() {
         commandCharacteristicUUID
       );
 
-      await weightSensorCharacteristic.startNotifications();
+      // await weightSensorCharacteristic.startNotifications();
       await distanceEncoderSensorCharacteristic.startNotifications();
       // ////console.log("> Notifications started");
-      weightSensorCharacteristic.addEventListener(
-        "characteristicvaluechanged",
-        handleWeightSensorNotifications
-      );
+      // weightSensorCharacteristic.addEventListener(
+      //   "characteristicvaluechanged",
+      //   handleWeightSensorNotifications
+      // );
       distanceEncoderSensorCharacteristic.addEventListener(
         "characteristicvaluechanged",
         handleDistanceEncoderSensorNotifications
@@ -334,7 +338,7 @@ export default function Multiplayer() {
 
       // await bluetoothDevice.gatt.disconnect();
 
-      weightSensorCharacteristic = null;
+      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
@@ -357,15 +361,15 @@ export default function Multiplayer() {
 
     try {
       // sendCommand(restartCommand);
-      weightSensorCharacteristic.removeEventListener(
-        "characteristicvaluechanged",
-        handleWeightSensorNotifications
-      );
+      // weightSensorCharacteristic.removeEventListener(
+      //   "characteristicvaluechanged",
+      //   handleWeightSensorNotifications
+      // );
       distanceEncoderSensorCharacteristic.removeEventListener(
         "characteristicvaluechanged",
         handleDistanceEncoderSensorNotifications
       );
-      await weightSensorCharacteristic.stopNotifications();
+      // await weightSensorCharacteristic.stopNotifications();
       await distanceEncoderSensorCharacteristic.stopNotifications();
       // sendCommand(0x56);
       // resetAllValue();
@@ -375,7 +379,7 @@ export default function Multiplayer() {
 
       await bluetoothDevice.gatt.disconnect();
 
-      weightSensorCharacteristic = null;
+      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
@@ -396,7 +400,7 @@ export default function Multiplayer() {
 
       // await bluetoothDevice.gatt.disconnect();
 
-      weightSensorCharacteristic = null;
+      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
@@ -424,15 +428,15 @@ export default function Multiplayer() {
 
     try {
       // sendCommand(restartCommand);
-      weightSensorCharacteristic.removeEventListener(
-        "characteristicvaluechanged",
-        handleWeightSensorNotifications
-      );
+      // weightSensorCharacteristic.removeEventListener(
+      //   "characteristicvaluechanged",
+      //   handleWeightSensorNotifications
+      // );
       distanceEncoderSensorCharacteristic.removeEventListener(
         "characteristicvaluechanged",
         handleDistanceEncoderSensorNotifications
       );
-      await weightSensorCharacteristic.stopNotifications();
+      // await weightSensorCharacteristic.stopNotifications();
       await distanceEncoderSensorCharacteristic.stopNotifications();
       // sendCommand(0x56);
       // resetAllValue();
@@ -442,7 +446,7 @@ export default function Multiplayer() {
 
       await bluetoothDevice.gatt.disconnect();
 
-      weightSensorCharacteristic = null;
+      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
@@ -463,7 +467,7 @@ export default function Multiplayer() {
 
       // await bluetoothDevice.gatt.disconnect();
 
-      weightSensorCharacteristic = null;
+      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
@@ -480,27 +484,27 @@ export default function Multiplayer() {
       setIsBluetoothConnected(false);
     }
   }
-  async function handleWeightSensorNotifications(event) {
-    try {
-      let value = event.target.value;
-      let result = 0;
-      // Convert raw data bytes to hex values just for the sake of showing something.
-      // In the "real" world, you'd use data.getUint8, data.getUint16 or even
-      // TextDecoder to process raw data bytes.
-      for (let i = 0; i < value.byteLength; i++) {
-        result += value.getUint8(i) << (8 * i);
-      }
+  // async function handleWeightSensorNotifications(event) {
+  //   try {
+  //     let value = event.target.value;
+  //     let result = 0;
+  //     // Convert raw data bytes to hex values just for the sake of showing something.
+  //     // In the "real" world, you'd use data.getUint8, data.getUint16 or even
+  //     // TextDecoder to process raw data bytes.
+  //     for (let i = 0; i < value.byteLength; i++) {
+  //       result += value.getUint8(i) << (8 * i);
+  //     }
 
-      setWeightSensorValue(result);
-      if (getInClassRoom) {
-        db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
-          {
-            weightSensorValue: parseInt(result),
-          }
-        );
-      }
-    } catch {}
-  }
+  //     setWeightSensorValue(result);
+  //     if (getInClassRoom) {
+  //       db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
+  //         {
+  //           weightSensorValue: parseInt(result),
+  //         }
+  //       );
+  //     }
+  //   } catch {}
+  // }
   async function handleDistanceEncoderSensorNotifications(event) {
     try {
       let value = event.target.value;
@@ -512,15 +516,11 @@ export default function Multiplayer() {
         result += value.getUint8(i) << (8 * i);
       }
       // setDistanceEncoderSensorValue(result);
-      setDistanceEncoderSensorValue(
-        (((4.4 * Math.PI) / 4185) * result).toFixed(1)
-      );
+      setDistanceEncoderSensorValue((result / 10).toFixed(1));
       if (getInClassRoom) {
         db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
           {
-            distanceSensorValue: parseFloat(
-              (((4.4 * Math.PI) / 4185) * result).toFixed(1)
-            ),
+            distanceSensorValue: parseFloat((result / 10).toFixed(1)),
           }
         );
       }
@@ -573,7 +573,6 @@ export default function Multiplayer() {
   /* BLUETOOTH LOW ENEGRY RELATED VARIABLES CODE END */
 
   const isPortrait = useMediaQuery({ query: "(orientation: portrait)" }); // Check responsive.
- 
 
   /* SESSION PLAYER LOGIN CODE BEGIN */
 
@@ -733,8 +732,8 @@ export default function Multiplayer() {
 
   const [gotAlreadyHostLeftDetected, setGotAlreadyHostLeftDetected] =
     useState(false);
- /* SESSION PLAYER LOGIN CODE END */
- /* STOPWATCH TIMER CONTROL CODE BEGIN */
+  /* SESSION PLAYER LOGIN CODE END */
+  /* STOPWATCH TIMER CONTROL CODE BEGIN */
   const [timeIsActive, setTimeIsActive] = useState(false);
   const [timeIsPaused, setTimeIsPaused] = useState(false);
   const [stopwatchElapsedTime, setStopwatchElapsedTime] = useState({
@@ -787,7 +786,7 @@ export default function Multiplayer() {
     clearInterval(intervalId);
   }
 
- /* STOPWATCH TIMER CONTROL CODE END */
+  /* STOPWATCH TIMER CONTROL CODE END */
   /* FETCHING DATA ON FIREBASE CONTROL CODE BEGIN */
   let fetchData = () => {
     async function onSuccess(response) {
@@ -1003,38 +1002,53 @@ export default function Multiplayer() {
 
   if (FSMPage === "MULTIPLAYER_MODE_HOMEPAGE") {
     return (
+      <FullScreen handle={handle}>
       <div
         className="vw-100 vh-100 mx-0"
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
-          </Row>
-        ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
             <Row className="p-3 mx-0" xs={12}>
               <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
-                <Row
+              <Row
+                  style={{alignItems:"center",height: "10%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col style={{textAlign:"right"}}>
+                    {handle.active ? (
+                      <Button
+                        size="lg"
+                        color="primary"
+                        variant="outline-dark"
+                      style={{ height: "100%" }}
+                        onClick={handle.exit}
+                      >
+                        <Row className="ph3 text-align-center" xs={12}>
+                          <BsFullscreenExit />
+                        </Row>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="lg"
+                        color="primary"
+                        variant="outline-dark"
+                        
+                      style={{height: "50%" }}
+                        onClick={handle.enter}
+                      >
+                        <Row className="ph3 text-align-center" xs={12}>
+                          <BsArrowsFullscreen />
+                        </Row>
+                      </Button>
+                    )}
+                    </Col>
+                </Row>
+              <Row
                   className="lastmilelogo p-3 mx-0"
-                  style={{ height: "20%", backgroundColor: "#FFFFFF" }}
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
                   xs={12}
-                ></Row>
+                >
+                </Row>
                 <Row
                   className="p7 p-bold p-1 mx-0 "
                   style={{ height: "70%", backgroundColor: "#E7E6E1" }}
@@ -1163,13 +1177,175 @@ export default function Multiplayer() {
                   style={{ height: "10%" }}
                   xs={12}
                 >
-                  © {new Date().getFullYear()} FRAB5 Thesis.
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
+                </Row>
+              </Col>
+            </Row>
+          </Row>
+        ) : (
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+              <Row
+                  style={{alignItems:"center",height: "5%", backgroundColor: "#FFFFFF" }}
+                >
+                    <Col style={{textAlign:"left"}}>
+                      <Button
+                        size="lg"
+                        color="primary"
+                        variant="outline-dark"
+                        
+                      // style={{height: "100%" }}
+                        onClick={() => history.push("/")}
+                      >
+                        <Row className="p3 text-align-center" xs={12}>
+                          <RiArrowGoBackFill />
+                        </Row>
+                      </Button>
+                    </Col>
+                </Row>
+              <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "20%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                >
+                </Row>
+                <Row
+                  className="p7 p-bold p-1 mx-0 "
+                  style={{ height: "65%", backgroundColor: "#E7E6E1" }}
+                  xs={12}
+                >
+                  <Col
+                    className="p7"
+                    style={{ backgroundColor: "#E7E6E1" }}
+                    xs={6}
+                  >
+                    <Row
+                      className="p7 text-align-center p-bold p-1 mx-0"
+                      style={{ height: "20%" }}
+                    >
+                      Player
+                    </Row>
+                    <Row
+                      className="p4 text-align-center"
+                      style={{ height: "10%" }}
+                    >
+                      Join an activity with a PIN provided by the host.
+                    </Row>
+                    <Row
+                      className="p text-align-center"
+                      style={{ height: "30%" }}
+                    >
+                      <Row
+                        className="p text-align-center"
+                        style={{ width: "80%", height: "100%" }}
+                      >
+                        <Form>
+                          <Form.Group>
+                            <Form.Control
+                              size="lg"
+                              placeholder="Game PIN"
+                              variant="outlined"
+                              value={PIN}
+                              type="number"
+                              onKeyPress={(event) => {
+                                if (event.key === "Enter")
+                                  event.preventDefault();
+                                // await JoinSession();
+                              }}
+                              onChange={(event) => setPIN(event.target.value)}
+                            />
+                          </Form.Group>
+                        </Form>
+                      </Row>
+                    </Row>
+                    <Row
+                      className="p4 text-align-center"
+                      style={{ height: "20%" }}
+                    >
+                      <Row
+                        className="p4 text-align-center"
+                        style={{ width: "75%", height: "30%" }}
+                      >
+                        <Button
+                          size="lg"
+                          color="primary"
+                          onClick={async () => {
+                            await JoinSession();
+                          }}
+                        >
+                          <Row className="p3 text-align-center" xs={12}>
+                            Join Session
+                          </Row>
+                        </Button>
+                      </Row>
+                    </Row>
+                  </Col>
+                  <Col
+                    className="p7"
+                    style={{ backgroundColor: "#E7E6E1" }}
+                    xs={6}
+                  >
+                    <Row
+                      className="p7 text-align-center p-bold p-1 mx-0"
+                      style={{ height: "20%" }}
+                    >
+                      Host
+                    </Row>
+                    <Row
+                      className="p4 text-align-center"
+                      style={{ height: "10%" }}
+                    >
+                      Host a live game or share a game with remote players.
+                    </Row>
+                    <Row
+                      className="p7 text-align-center"
+                      style={{ height: "50%" }}
+                    >
+                      <Button
+                        size="lg"
+                        color="primary"
+                        style={{ width: "75%" }}
+                        onClick={async () => {
+                          CreateSession();
+                        }}
+                      >
+                        <Row className="p3 text-align-center" xs={12}>
+                          Create Session
+                        </Row>
+                      </Button>
+                    </Row>
+                    {/* <Row
+                      className="p7 text-align-center"
+                      style={{ height: "50%" }}
+                    >
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        style={{ width: "75%" }}
+                        onClick={() => history.push("/")}
+                      >
+                        <Row className="p3 text-align-center" xs={12}>
+                          <FaHome />
+                          Go Back to Homepage
+                        </Row>
+                      </Button>
+                    </Row> */}
+                  </Col>
+                </Row>
+                <Row
+                  className="p4 text-align-center p-1 mx-0"
+                  style={{ height: "10%" }}
+                  xs={12}
+                >
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
                 </Row>
               </Col>
             </Row>
           </Row>
         )}
       </div>
+      </FullScreen>
     );
   } else if (FSMPage === "MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE") {
     return (
@@ -1283,7 +1459,7 @@ export default function Multiplayer() {
                   style={{ height: "10%" }}
                   xs={12}
                 >
-                  © {new Date().getFullYear()} FRAB5 Thesis.
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
                 </Row>
               </Col>
             </Row>
@@ -1403,7 +1579,7 @@ export default function Multiplayer() {
                   style={{ height: "10%" }}
                   xs={12}
                 >
-                  © {new Date().getFullYear()} FRAB5 Thesis.
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
                 </Row>
               </Col>
             </Row>
@@ -1770,7 +1946,7 @@ export default function Multiplayer() {
                 </Row>
               </Col>
               <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
-                <Row
+                {/*<Row
                   className="p text-align-center text-white p-1 mx-0"
                   style={{ height: "15%", backgroundColor: "#000000" }}
                 >
@@ -1782,7 +1958,21 @@ export default function Multiplayer() {
                   style={{ height: "35%", backgroundColor: "#FFF8F0" }}
                 >
                   {weightSensorValue}
-                  {/* 12345678.9 */}
+                  {/* 12345678.9 
+                </Row>*/}
+
+                <Row
+                  className="p text-align-center text-white p-1 mx-0"
+                  style={{ height: "15%", backgroundColor: "#000000" }}
+                >
+                  <FaUsers />
+                  Group Name
+                </Row>
+                <Row
+                  className="p3 text-align-center p-1 mx-0 border border-dark"
+                  style={{ height: "35%", backgroundColor: "#FFF8F0" }}
+                >
+                  {groupPlayerName}
                 </Row>
                 <Row
                   className="p text-align-center text-white p-1 mx-0"
@@ -1808,23 +1998,10 @@ export default function Multiplayer() {
                 </Row>
                 <Row
                   className="p6 text-align-center p-1 mx-0 border border-dark"
-                  style={{ height: "35%", backgroundColor: "#FFF8F0" }}
+                  style={{ height: "85%", backgroundColor: "#FFF8F0" }}
                 >
                   {distanceEncoderSensorValue}
                   {/* 12345678.9 */}
-                </Row>
-                <Row
-                  className="p text-align-center text-white p-1 mx-0"
-                  style={{ height: "15%", backgroundColor: "#000000" }}
-                >
-                  <FaUsers />
-                  Group Name
-                </Row>
-                <Row
-                  className="p3 text-align-center p-1 mx-0 border border-dark"
-                  style={{ height: "35%", backgroundColor: "#FFF8F0" }}
-                >
-                  {groupPlayerName}
                 </Row>
               </Col>
               <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
@@ -2158,11 +2335,11 @@ export default function Multiplayer() {
                 columns={[
                   { title: "Group Name", field: "groupName" },
                   { title: "Robot Name", field: "deviceName" },
-                  {
-                    title: "Weight (kg.)",
-                    field: "weightSensorValue",
-                    type: "numeric",
-                  },
+                  // {
+                  //   title: "Weight (kg.)",
+                  //   field: "weightSensorValue",
+                  //   type: "numeric",
+                  // },
                   {
                     title: "Distance (cm.)",
                     field: "distanceSensorValue",
@@ -2225,7 +2402,7 @@ export default function Multiplayer() {
                   style={{ height: "20%" }}
                   xs={12}
                 >
-                  © {new Date().getFullYear()} FRAB5 Thesis.
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
                 </Row>
               </Col>
             </Row>
@@ -2284,7 +2461,8 @@ export default function Multiplayer() {
                   style={{ height: "15%" }}
                   xs={12}
                 >
-                  The host of the room left. Thanks for playing!
+                  The game of this room has already started or The host of the
+                  room left. Thanks for playing!
                 </Row>
                 <Row
                   className="p text-align-center p-1 mx-0"
@@ -2368,7 +2546,8 @@ export default function Multiplayer() {
                   style={{ height: "15%" }}
                   xs={12}
                 >
-                  The game of this room has already started.
+                  The game of this room has already started or The host of the
+                  room left. Thanks for playing!
                 </Row>
                 <Row
                   className="p text-align-center p-1 mx-0"

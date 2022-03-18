@@ -205,3 +205,18 @@
 .text-white {
   color: azure;
 }
+
+
+.ph {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.5vh;
+}
+.ph3 {
+  font-family: 'Manrope', sans-serif;
+
+  font-size: 1.75vh;
+}
+.ph7 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 2.5vh;
+}
