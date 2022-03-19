@@ -31,7 +31,7 @@ import {
   MdOutlineControlCamera,
 } from "react-icons/md"; // include React Icons Library
 import { RiPinDistanceFill } from "react-icons/ri"; // include React Icons Library
-import { SiProbot } from "react-icons/si"; // include React Icons Library
+import { SiProbot, SiStatuspal } from "react-icons/si"; // include React Icons Library
 
 let bluetoothDevice = null; // Bluetooth Device Name Global Variable
 // let weightSensorCharacteristic = null; // Weight Sensor Characteristic Global Variable
@@ -40,7 +40,7 @@ let commandCharacteristic = null; // Command Characteristic Global Variable
 
 /* EXPORT DEFAULT FUNCTION SINGLEPLAYER CODE BEGIN */
 export default function Singleplayer() {
-  const [version, setVersion] = useState("1.3.0");
+  const [version, setVersion] = useState("1.4.0");
   /* CALL HISTORY BEGIN */
   const history = useHistory();
 
@@ -123,10 +123,8 @@ export default function Singleplayer() {
   const backwardCommand = 0x51;
   const stopCommand = 0x54;
   // const restartCommand = 0x55;
-
-  const [weightSensorValue, setWeightSensorValue] = useState(0);
   const [distanceEncoderSensorValue, setDistanceEncoderSensorValue] = useState(
-    (0).toFixed(1)
+    (0).toFixed(3)
   );
 
   const [isUpButtonPressed, setIsUpButtonPressed] = useState(false);
@@ -138,8 +136,7 @@ export default function Singleplayer() {
     useState(false);
 
   async function onDisconnected(event) {
-    setWeightSensorValue(0);
-    setDistanceEncoderSensorValue((0).toFixed(1));
+    setDistanceEncoderSensorValue((0).toFixed(3));
 
     // await bluetoothDevice.gatt.disconnect();
 
@@ -210,8 +207,7 @@ export default function Singleplayer() {
       setIsBluetoothConnected(true);
       // sendCommand(0x57);
     } catch {
-      setWeightSensorValue(0);
-      setDistanceEncoderSensorValue((0).toFixed(1));
+      setDistanceEncoderSensorValue((0).toFixed(3));
 
       // await bluetoothDevice.gatt.disconnect();
 
@@ -248,9 +244,7 @@ export default function Singleplayer() {
       await distanceEncoderSensorCharacteristic.stopNotifications();
 
       // resetAllValue();
-
-      setWeightSensorValue(0);
-      setDistanceEncoderSensorValue((0).toFixed(1));
+      setDistanceEncoderSensorValue((0).toFixed(3));
 
       await bluetoothDevice.gatt.disconnect();
 
@@ -262,8 +256,7 @@ export default function Singleplayer() {
       setIsBluetoothConnected(false);
     } catch {
       // sendCommand(restartCommand);
-      setWeightSensorValue(0);
-      setDistanceEncoderSensorValue((0).toFixed(1));
+      setDistanceEncoderSensorValue((0).toFixed(3));
 
       // await bluetoothDevice.gatt.disconnect();
 
@@ -275,21 +268,6 @@ export default function Singleplayer() {
       setIsBluetoothConnected(false);
     }
   }
-  // async function handleWeightSensorNotifications(event) {
-  //   try {
-  //     let value = event.target.value;
-  //     let result = 0;
-  //     // Convert raw data bytes to hex values just for the sake of showing something.
-  //     // In the "real" world, you'd use data.getUint8, data.getUint16 or even
-  //     // TextDecoder to process raw data bytes.
-  //     for (let i = 0; i < value.byteLength; i++) {
-  //       result += value.getUint8(i) << (8 * i);
-  //     }
-
-  //     setWeightSensorValue(result);
-  //   } catch {}
-  // }
-
   async function handleDistanceEncoderSensorNotifications(event) {
     try {
       let value = event.target.value;
@@ -301,7 +279,7 @@ export default function Singleplayer() {
         result += value.getUint8(i) << (8 * i);
       }
       // setDistanceEncoderSensorValue(result);
-      setDistanceEncoderSensorValue((result / 10).toFixed(1));
+      setDistanceEncoderSensorValue((result / 1000).toFixed(3));
       // setDistanceEncoderSensorValue((0.00329119230376073577362753116344*result).toFixed(1));
     } catch {}
   }
@@ -339,9 +317,6 @@ export default function Singleplayer() {
     setIsRightButtonPressed(true);
     setIsStopButtonPressed(true);
 
-    // setWeightSensorValue(0);
-    // setDistanceEncoderSensorValue((0).toFixed(1));
-
     await sendCommand(0x56);
 
     setIsUpButtonPressed(false);
@@ -359,42 +334,634 @@ export default function Singleplayer() {
   return (
     <div className="vw-100 vh-100" style={{ backgroundColor: "#F7F6E7" }}>
       {isPortrait ? (
-        <Row className="vw-100 vh-100 mx-0 ">
-          <Col style={{ backgroundColor: "#FFFFFF" }}>
-            <Row
-              className="lastmilelogo p2 text-align-center p-1 mx-0"
-              style={{ height: "40%" }}
-            ></Row>
-            <Row
-              className="p2 text-align-center p-1 mx-0"
-              style={{ height: "10%" }}
-            >
-              Please rotate your device to landscape mode.
-            </Row>
-            <Row
-              className="rotatelogo p2 text-align-center p-1 mx-0"
-              style={{ height: "40%" }}
-            ></Row>
-          </Col>
+        <Row className="vw-100 vh-100 p-1 mx-0 ">
+          <Row className="mx-0 ">
+            <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+              <Row
+                className="p-1"
+                style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+              >
+                <Col
+                  style={{
+                    height: "100%",
+                    justifyContent: "left",
+                    alignItems: "center",
+                    textAlign: "left",
+                  }}
+                  xs={3}
+                >
+                  <Button
+                    size="lg"
+                    color="primary"
+                    variant="outline-danger"
+                    onClick={async () => {
+                      await onExitButtonEvent();
+                    }}
+                  >
+                    <Row className="p-arrow-button text-align-center" xs={12}>
+                      <GiExitDoor />
+                    </Row>
+                  </Button>
+                </Col>
+                <Col
+                  className="lastmilelogo ph3 text-align-center"
+                  style={{
+                    height: "100%",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    textAlign: "center",
+                  }}
+                  xs={6}
+                ></Col>
+                <Col
+                  style={{
+                    height: "100%",
+                    justifyContent: "right",
+                    alignItems: "center",
+                    textAlign: "right",
+                  }}
+                  xs={3}
+                >
+                  
+                  {isBluetoothConnected ? (
+                    <Button
+                      size="lg"
+                      variant="outline-danger"
+                      // style={{ height: "100%", width: "100%" }}
+                      onClick={async () => await disconnectToBluetoothDevice()}
+                      disabled={
+                        !isBluetoothConnected ||
+                        isDownButtonPressed ||
+                        isRightButtonPressed ||
+                        isLeftButtonPressed ||
+                        isUpButtonPressed ||
+                        isStopButtonPressed ||
+                        isDirectionButtonReleased
+                      }
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <MdOutlineBluetoothDisabled />
+                      </Row>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      variant="outline-primary"
+                      // style={{ height: "100%", width: "100%" }}
+                      onClick={async () => await connectToBluetoothDevice()}
+                      disabled={
+                        isBluetoothConnected ||
+                        isDownButtonPressed ||
+                        isRightButtonPressed ||
+                        isLeftButtonPressed ||
+                        isUpButtonPressed ||
+                        isStopButtonPressed ||
+                        isDirectionButtonReleased
+                      }
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <MdBluetooth />
+                      </Row>
+                    </Button>
+                  )}
+                </Col>
+              </Row>
+
+              <Row
+                className=""
+                style={{ height: "2%", backgroundColor: "#FFFFFF" }}
+              ></Row>
+              <Row
+                className=""
+                style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+              >
+                <Col
+                  className="ph3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                  }}
+                  xs={6}
+                >
+                  <SiStatuspal />
+                  &nbsp;&nbsp;Status
+                </Col>
+                <Col
+                  className="ph3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                  }}
+                  xs={6}
+                >
+                  <SiProbot />
+                  &nbsp;&nbsp;Robot Name
+                </Col>
+              </Row>
+
+              <Row
+                className=""
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  height: "5%",
+                }}
+              >
+                {isBluetoothConnected ? (
+                  <Col
+                    className="ph7 text-align-center text-white border border-dark"
+                    style={{
+                      backgroundColor: "#008000",
+                      height: "100%",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>Connected</Row>
+                  </Col>
+                ) : (
+                  <Col
+                    className="ph7 text-align-center text-white border border-dark"
+                    style={{
+                      backgroundColor: "#FF0000",
+                      height: "100%",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>Disconnected</Row>
+                  </Col>
+                )}
+
+                <Col
+                  className="ph7 text-align-center border border-dark"
+                  style={{ height: "100%" }}
+                  xs={6}
+                >
+                  <Row xs={12}>{bluetoothDeviceName}</Row>
+                </Col>
+              </Row>
+
+              <Row
+                className=""
+                style={{ height: "3%", backgroundColor: "#FFFFFF" }}
+              ></Row>
+              <Row
+                className=""
+                style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+              >
+                <Col
+                  className="ph3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                  }}
+                  xs={12}
+                >
+                  <RiPinDistanceFill />
+                  &nbsp;&nbsp;Distance
+                </Col>
+              </Row>
+              <Row
+                className="p4 text-align-center"
+                style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+              >
+                <Col
+                  className="ph7 text-align-center border border-dark"
+                  style={{ height: "100%" }}
+                  xs={12}
+                >
+                  <Row xs={12}>{distanceEncoderSensorValue}&nbsp;&nbsp;m</Row>
+                </Col>
+              </Row>
+
+              <Row
+                className="p4 text-align-center p-1"
+                style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+              >
+                <Col
+                  className="ph3 text-align-center text-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#FFFFFF",
+                    justifyContent: "left",
+                    alignItems: "center",
+                  }}
+                  xs={3}
+                ></Col>
+                <Col
+                  className="ph3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                  }}
+                  xs={6}
+                >
+                  Reset&nbsp;Distance
+                </Col>
+                <Col
+                  className="ph3 text-align-center text-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#FFFFFF",
+                    justifyContent: "right",
+                    alignItems: "center",
+                  }}
+                  xs={3}
+                >
+                  <Button
+                    size="lg"
+                    variant="outline-danger"
+                    onClick={async () => resetAllValue()}
+                    disabled={
+                      !isBluetoothConnected ||
+                      isDownButtonPressed ||
+                      isRightButtonPressed ||
+                      isLeftButtonPressed ||
+                      isUpButtonPressed ||
+                      isStopButtonPressed ||
+                      isDirectionButtonReleased
+                    }
+                  >
+                    <Row className="p-arrow-button text-align-center" xs={12}>
+                      <BiReset />
+                    </Row>
+                  </Button>
+                </Col>
+              </Row>
+              <Row
+                className=""
+                style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+              ></Row>
+              <Row
+                className="ph7 text-align-center text-white p-1"
+                style={{ height: "10%", backgroundColor: "#000000" }}
+              >
+                <Col className="text-align-center" xs={12}>
+                  <MdOutlineControlCamera />
+                  &nbsp;&nbsp;Driving&nbsp;Directions
+                </Col>
+              </Row>
+              <Row
+                className="p5 text-align-center border border-dark"
+                style={{ height: "35%", backgroundColor: "#FFFFFF" }}
+              >
+                <div style={{ display: "block", height: "99%", width: "100%" }}>
+                  <Row
+                    xs={3}
+                    style={{ height: "33%" }}
+                    className="text-align-center"
+                  >
+                    <Col
+                      // style={{
+                      //   backgroundColor: "red",
+                      // }}
+                      xs={4}
+                    ></Col>
+                    <Col
+                      // style={{ backgroundColor: "yellow" }}
+                      xs={4}
+                    >
+                      <Row className="text-align-center" xs={12}>
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          style={{ height: "95%", width: "95%" }}
+                          onMouseDown={async () => {
+                            setIsUpButtonPressed(true);
+                            await sendCommand(forwardCommand);
+                          }}
+                          onMouseUp={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsUpButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          onTouchStart={async () => {
+                            setIsUpButtonPressed(true);
+                            await sendCommand(forwardCommand);
+                          }}
+                          onTouchEnd={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsUpButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          disabled={
+                            !isBluetoothConnected ||
+                            isDownButtonPressed ||
+                            isRightButtonPressed ||
+                            isLeftButtonPressed ||
+                            isStopButtonPressed ||
+                            isDirectionButtonReleased
+                          }
+                        >
+                          <Row
+                            className="p-arrow-button text-align-center"
+                            xs={12}
+                          >
+                            <ImArrowUp />
+                          </Row>
+                        </Button>
+                      </Row>
+                    </Col>
+                    <Col
+                      // style={{
+                      //   backgroundColor: "green",
+                      // }}
+                      xs={4}
+                    ></Col>
+                  </Row>
+                  <Row
+                    xs={3}
+                    style={{ height: "33%" }}
+                    className="text-align-center"
+                  >
+                    <Col
+                      // style={{
+                      //   backgroundColor: "red",
+                      // }}
+                      xs={4}
+                    >
+                      <Row className="text-align-center" xs={12}>
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          style={{ height: "95%", width: "95%" }}
+                          onMouseDown={async () => {
+                            setIsLeftButtonPressed(true);
+                            await sendCommand(spinLeftCommand);
+                          }}
+                          onMouseUp={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsLeftButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          onTouchStart={async () => {
+                            setIsLeftButtonPressed(true);
+                            await sendCommand(spinLeftCommand);
+                          }}
+                          onTouchEnd={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsLeftButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          disabled={
+                            !isBluetoothConnected ||
+                            isDownButtonPressed ||
+                            isRightButtonPressed ||
+                            isUpButtonPressed ||
+                            isStopButtonPressed ||
+                            isDirectionButtonReleased
+                          }
+                        >
+                          <Row
+                            className="p-arrow-button text-align-center"
+                            xs={12}
+                          >
+                            <ImArrowLeft />
+                          </Row>
+                        </Button>
+                      </Row>
+                    </Col>
+                    <Col
+                      // style={{
+                      //   backgroundColor: "yellow",
+                      // }}
+                      xs={4}
+                    >
+                      <Row className="text-align-center" xs={12}>
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          style={{ height: "95%", width: "95%" }}
+                          onMouseDown={async () => {
+                            setIsStopButtonPressed(true);
+                            await sendCommand(stopCommand);
+                          }}
+                          onMouseUp={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsStopButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          onTouchStart={async () => {
+                            setIsStopButtonPressed(true);
+                            await sendCommand(stopCommand);
+                          }}
+                          onTouchEnd={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsStopButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          disabled={
+                            !isBluetoothConnected ||
+                            isDownButtonPressed ||
+                            isRightButtonPressed ||
+                            isUpButtonPressed ||
+                            isLeftButtonPressed ||
+                            isDirectionButtonReleased
+                          }
+                        >
+                          <Row
+                            className="p-arrow-button text-align-center"
+                            xs={12}
+                          >
+                            <GiStopSign />
+                          </Row>
+                        </Button>
+                      </Row>
+                    </Col>
+                    <Col
+                      // style={{
+                      //   backgroundColor: "green",
+                      // }}
+                      xs={4}
+                    >
+                      <Row className="text-align-center" xs={12}>
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          style={{ height: "95%", width: "95%" }}
+                          onMouseDown={async () => {
+                            setIsRightButtonPressed(true);
+                            await sendCommand(spinRightCommand);
+                          }}
+                          onMouseUp={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsRightButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          onTouchStart={async () => {
+                            setIsRightButtonPressed(true);
+                            await sendCommand(spinRightCommand);
+                          }}
+                          onTouchEnd={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsRightButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          disabled={
+                            !isBluetoothConnected ||
+                            isDownButtonPressed ||
+                            isStopButtonPressed ||
+                            isUpButtonPressed ||
+                            isLeftButtonPressed ||
+                            isDirectionButtonReleased
+                          }
+                        >
+                          <Row
+                            className="p-arrow-button text-align-center"
+                            xs={12}
+                          >
+                            <ImArrowRight />
+                          </Row>
+                        </Button>
+                      </Row>
+                    </Col>
+                  </Row>
+                  <Row
+                    xs={3}
+                    style={{ height: "33%" }}
+                    className="text-align-center"
+                  >
+                    <Col
+                      className="ph"
+                      style={{
+                        display: "flex",
+                        justifyContent: "left",
+                        alignItems: "flex-end",
+                        height: "100%",
+                      }}
+                      xs={4}
+                    >
+                      Singleplayer&nbsp;Mode
+                    </Col>
+                    <Col
+                      // style={{
+                      //   backgroundColor: "yellow",
+                      // }}
+                      xs={4}
+                    >
+                      <Row className="text-align-center" xs={12}>
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          style={{ height: "95%", width: "95%" }}
+                          onMouseDown={async () => {
+                            setIsDownButtonPressed(true);
+                            await sendCommand(backwardCommand);
+                          }}
+                          onMouseUp={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsDownButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          onTouchStart={async () => {
+                            setIsDownButtonPressed(true);
+                            await sendCommand(backwardCommand);
+                          }}
+                          onTouchEnd={async () => {
+                            setIsDirectionButtonReleased(true);
+                            await sleep(stability_delay);
+                            await sendCommand(stopCommand);
+                            setIsDownButtonPressed(false);
+                            setIsDirectionButtonReleased(false);
+                          }}
+                          disabled={
+                            !isBluetoothConnected ||
+                            isRightButtonPressed ||
+                            isStopButtonPressed ||
+                            isUpButtonPressed ||
+                            isLeftButtonPressed ||
+                            isDirectionButtonReleased
+                          }
+                        >
+                          <Row
+                            className="p-arrow-button text-align-center"
+                            xs={12}
+                          >
+                            <ImArrowDown />
+                          </Row>
+                        </Button>
+                      </Row>
+                    </Col>
+
+                    <Col
+                      className="ph3"
+                      style={{
+                        display: "flex",
+                        justifyContent: "right",
+                        alignItems: "flex-end",
+                        height: "100%",
+                      }}
+                      xs={4}
+                    >
+                      V{version}
+                    </Col>
+                  </Row>
+                </div>
+              </Row>
+            </Col>
+          </Row>
         </Row>
       ) : (
         <Row className="vw-100 vh-100 p-1 mx-0 ">
-          <Row className="mx-0 ">
+          <Row className="p-1 mx-0">
             <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
               <Row
+                style={{
+                  alignItems: "center",
+                  height: "15%",
+                  backgroundColor: "#FFFFFF",
+                }}
+              >
+                <Col style={{ textAlign: "left" }}>
+                  <Button
+                    size="lg"
+                    color="primary"
+                    variant="outline-danger"
+                    onClick={async () => {
+                      // await sendCommand(restartCommand);
+                      await onExitButtonEvent();
+                    }}
+                    style={{ height: "100%", width: "40%" }}
+                  >
+                    <Row className="p-arrow-button text-align-center" xs={12}>
+                      <GiExitDoor />
+                    </Row>
+                  </Button>
+                </Col>
+              </Row>
+              <Row
                 className="lastmilelogo mx-0"
-                style={{ height: "20%", backgroundColor: "#FFFFFF" }}
+                style={{ height: "15%", backgroundColor: "#FFFFFF" }}
               ></Row>
               <Row
                 className="p4 text-align-center p-1 mx-0"
-                style={{ height: "20%", backgroundColor: "#FFFFFF" }}
+                style={{ height: "10%", backgroundColor: "#FFFFFF" }}
               >
                 Singleplayer Mode
-                <hr />
-                Press connect bluetooth to your robot then enjoy it.
               </Row>
               <Row
-                className="p text-align-center text-white p-1"
+                className="p text-align-center text-white p-1 text-white border border-white"
                 style={{ height: "15%", backgroundColor: "#000000" }}
               >
                 <MdOutlineControlCamera />
@@ -402,7 +969,7 @@ export default function Singleplayer() {
               </Row>
               <Row
                 className="p5 text-align-center border border-dark"
-                style={{ height: "45%", backgroundColor: "#FFF8F0" }}
+                style={{ height: "45%", backgroundColor: "#FFFFFF" }}
               >
                 <div style={{ display: "block", height: "99%", width: "100%" }}>
                   <Row
@@ -703,142 +1270,169 @@ export default function Singleplayer() {
                 </div>
               </Row>
             </Col>
-            <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
-              {/* <Row
-                className="p text-align-center text-white p-1 mx-0"
-                style={{ height: "15%", backgroundColor: "#000000" }}
-              >
-                <FaWeight />
-                Weight (g.)
-              </Row>
+            <Col style={{ backgroundColor: "#FFFFFF" }} xs={7}>
               <Row
-                className="p6 text-align-center p-1 mx-0 border border-dark"
-                style={{ height: "35%", backgroundColor: "#FFF8F0" }}
+                className="p-1"
+                style={{
+                  alignItems: "flex-start",
+                  backgroundColor: "#FFFFFF",
+                  height: "15%",
+                }}
               >
-                {weightSensorValue}
-                {/* 12345678.9 }
-              </Row> */}
-              <Row
-                className="p text-align-center text-white p-1 mx-0"
-                style={{ height: "15%", backgroundColor: "#000000" }}
-              >
-                <SiProbot />
-                Robot Name
-              </Row>
-              <Row
-                className="p3 text-align-center p-1 mx-0 border border-dark"
-                style={{ height: "85%", backgroundColor: "#FFF8F0" }}
-              >
-                {bluetoothDeviceName}
-              </Row>
-            </Col>
-            <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
-              <Row
-                className="p text-align-center text-white p-1 mx-0"
-                style={{ height: "15%", backgroundColor: "#000000" }}
-              >
-                <RiPinDistanceFill />
-                Distance (cm.)
-              </Row>
-              <Row
-                className="p6 text-align-center p-1 mx-0 border border-dark"
-                style={{ height: "85%", backgroundColor: "#FFF8F0" }}
-              >
-                {distanceEncoderSensorValue}
-                {/* 12345678.9 */}
-              </Row>
-              {/* <Row
-                className="p text-align-center text-white p-1 mx-0"
-                style={{ height: "15%", backgroundColor: "#000000" }}
-              >
-                -
-              </Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0 border border-dark"
-                style={{ height: "35%", backgroundColor: "#FFF8F0" }}
-              >
-                -
-              </Row> */}
-            </Col>
-            <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
-              <Row
-                className="p text-align-center text-white p-1 mx-0"
-                style={{ height: "15%", backgroundColor: "#000000" }}
-              >
-                <FaLink />
-                Connectivity
-              </Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0 border border-dark"
-                style={{ height: "35%", backgroundColor: "#FFF8F0" }}
-              >
-                <Row
-                  className="p2 text-align-center p-1 mx-0"
-                  style={{ height: "50%", backgroundColor: "#FFF8F0" }}
+                <Col
+                  className="p3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                  }}
+                  xs={6}
                 >
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={async () => await connectToBluetoothDevice()}
-                    disabled={
-                      isBluetoothConnected ||
-                      isDownButtonPressed ||
-                      isRightButtonPressed ||
-                      isLeftButtonPressed ||
-                      isUpButtonPressed ||
-                      isStopButtonPressed ||
-                      isDirectionButtonReleased
-                    }
+                  <SiStatuspal />
+                  &nbsp;&nbsp;Status
+                </Col>
+                <Col
+                  className="p3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                  }}
+                  xs={6}
+                >
+                  <SiProbot />
+                  &nbsp;&nbsp;Robot Name
+                </Col>
+              </Row>
+
+              <Row
+                className="p-1"
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  height: "15%",
+                }}
+              >
+                {isBluetoothConnected ? (
+                  <Col
+                    className="p7 text-align-center text-white border border-dark"
+                    style={{
+                      backgroundColor: "#008000",
+                      height: "100%",
+                    }}
+                    xs={6}
                   >
-                    <Row className="p text-align-center">
-                      <MdBluetooth />
-                      Connect
-                    </Row>
-                  </Button>
-                </Row>
-                <Row
-                  className="p2 text-align-center p-1 mx-0"
-                  style={{ height: "50%", backgroundColor: "#FFF8F0" }}
-                >
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={async () => await disconnectToBluetoothDevice()}
-                    disabled={
-                      !isBluetoothConnected ||
-                      isDownButtonPressed ||
-                      isRightButtonPressed ||
-                      isLeftButtonPressed ||
-                      isUpButtonPressed ||
-                      isStopButtonPressed ||
-                      isDirectionButtonReleased
-                    }
+                    <Row xs={12}>Connected</Row>
+                  </Col>
+                ) : (
+                  <Col
+                    className="p7 text-align-center text-white border border-dark"
+                    style={{
+                      backgroundColor: "#FF0000",
+                      height: "100%",
+                    }}
+                    xs={6}
                   >
-                    <Row className="p text-align-center">
-                      <MdOutlineBluetoothDisabled />
-                      Disconnect
-                    </Row>
-                  </Button>
-                </Row>
+                    <Row xs={12}>Disconnected</Row>
+                  </Col>
+                )}
+
+                <Col
+                  className="p7 text-align-center border border-dark"
+                  style={{ height: "100%" }}
+                  xs={6}
+                >
+                  <Row xs={12}>{bluetoothDeviceName}</Row>
+                </Col>
+              </Row>
+
+              <Row
+                className=""
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  height: "5%",
+                }}
+              ></Row>
+              <Row
+                className="p-1 mx-0"
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  height: "15%",
+                }}
+              >
+                <Col
+                  className="p3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                  }}
+                  xs={12}
+                >
+                  <RiPinDistanceFill />
+                  &nbsp;&nbsp;Distance
+                </Col>
               </Row>
               <Row
-                className="p text-align-center text-white p-1 mx-0"
-                style={{ height: "15%", backgroundColor: "#000000" }}
+                className="p-1 mx-0"
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  height: "30%",
+                }}
               >
-                <AiOutlineMenu />
-                Menu
+                <Col
+                  className="p7 text-align-center border border-dark"
+                  style={{ height: "100%" }}
+                  xs={12}
+                >
+                  <Row xs={12}>{distanceEncoderSensorValue}&nbsp;&nbsp;m</Row>
+                </Col>
               </Row>
               <Row
-                className="p text-align-center p-1 mx-0 border border-dark"
-                style={{ height: "35%", backgroundColor: "#FFF8F0" }}
+                className="p-1 mx-0"
+                style={{
+                  alignItems: "flex-start",
+                  backgroundColor: "#FFFFFF",
+                  height: "15%",
+                }}
               >
-                <Row
-                  className="p2 text-align-center p-1 mx-0"
-                  style={{ height: "50%", backgroundColor: "#FFF8F0" }}
+                <Col
+                  className="p3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#FFFFFF",
+                    textAlign: "center",
+                  }}
+                  xs={3}
+                ></Col>
+                <Col
+                  className="p3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                  }}
+                  xs={6}
+                >
+                  Reset&nbsp;Distance
+                </Col>
+                <Col
+                  className="p3 text-align-center text-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#FFFFFF",
+                    justifyContent: "left",
+                    alignItems: "center",
+                  }}
+                  xs={3}
                 >
                   <Button
-                    variant="danger"
-                    size="sm"
+                    size="lg"
+                    variant="outline-danger"
+                    style={{ height: "100%", width: "100%" }}
                     onClick={async () => resetAllValue()}
                     disabled={
                       !isBluetoothConnected ||
@@ -850,39 +1444,132 @@ export default function Singleplayer() {
                       isDirectionButtonReleased
                     }
                   >
-                    <Row className="p text-align-center">
+                    <Row className="p-arrow-button text-align-center" xs={12}>
                       <BiReset />
-                      Reset Distance
                     </Row>
                   </Button>
-                </Row>
+                </Col>
+              </Row>
 
-                <Row
-                  className="p2 text-align-center p-1 mx-0"
-                  style={{ height: "50%", backgroundColor: "#FFF8F0" }}
+              <Row
+                className="p-0 mx-0"
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  height: "5%",
+                }}
+              ></Row>
+            </Col>
+
+            <Col style={{ backgroundColor: "#FFFFFF" }} xs={2}>
+              <Row
+                className="p-1"
+                style={{
+                  alignItems: "flex-start",
+                  backgroundColor: "#FFFFFF",
+                  height: "15%",
+                }}
+              >
+                <Col
+                  className="p3 text-align-center text-white border border-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                  }}
+                  xs={12}
                 >
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={async () => {
-                      // await sendCommand(restartCommand);
-                      await onExitButtonEvent();
-                    }}
-                    disabled={
-                      isDownButtonPressed ||
-                      isRightButtonPressed ||
-                      isLeftButtonPressed ||
-                      isUpButtonPressed ||
-                      isStopButtonPressed ||
-                      isDirectionButtonReleased
-                    }
-                  >
-                    <Row className="p text-align-center">
-                      <GiExitDoor />
-                      Exit Game
-                    </Row>
-                  </Button>
-                </Row>
+                  Connection
+                </Col>
+              </Row>
+              <Row
+                className=""
+                style={{
+                  alignItems: "center",
+
+                  backgroundColor: "#FFFFFF",
+                  height: "10%",
+                }}
+              >
+                <Col
+                  style={{
+                    display: "flex",
+                    justifyContent: "right",
+                    alignItems: "flex-start",
+                  }}
+                  xs={12}
+                >
+                  {isBluetoothConnected ? (
+                    <Button
+                      size="lg"
+                      variant="outline-danger"
+                      style={{ height: "100%", width: "100%" }}
+                      onClick={async () => await disconnectToBluetoothDevice()}
+                      disabled={
+                        !isBluetoothConnected ||
+                        isDownButtonPressed ||
+                        isRightButtonPressed ||
+                        isLeftButtonPressed ||
+                        isUpButtonPressed ||
+                        isStopButtonPressed ||
+                        isDirectionButtonReleased
+                      }
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <MdOutlineBluetoothDisabled />
+                      </Row>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      variant="outline-primary"
+                      style={{ height: "100%", width: "100%" }}
+                      onClick={async () => await connectToBluetoothDevice()}
+                      disabled={
+                        isBluetoothConnected ||
+                        isDownButtonPressed ||
+                        isRightButtonPressed ||
+                        isLeftButtonPressed ||
+                        isUpButtonPressed ||
+                        isStopButtonPressed ||
+                        isDirectionButtonReleased
+                      }
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <MdBluetooth />
+                      </Row>
+                    </Button>
+                  )}
+                </Col>
+              </Row>
+              <Row
+                className="p-0 mx-0"
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  height: "70%",
+                }}
+              ></Row>
+              <Row
+                className="p-0 mx-0"
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  height: "5%",
+                }}
+              >
+                <Col
+                  className="p"
+                  style={{
+                    display: "flex",
+                    justifyContent: "right",
+                    alignItems: "flex-end",
+                    height: "100%",
+                  }}
+                  xs={12}
+                >
+                  <Row xs={12}>V{version}</Row>
+                </Col>
               </Row>
             </Col>
           </Row>
