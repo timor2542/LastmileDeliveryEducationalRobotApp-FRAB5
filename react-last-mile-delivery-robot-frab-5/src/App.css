@@ -137,14 +137,24 @@
   background-position: center;
   background-repeat: no-repeat;
 }
-
+.loadinglogoh{
+  background-image: url(./Assets/gif/loader.gif);
+  background-size: 70%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .warninglogo{
   background-image: url(./Assets/svg/warning-sign.svg);
   background-size: 80% 80%;
   background-position: center;
   background-repeat: no-repeat;
 }
-
+.warninglogoh{
+  background-image: url(./Assets/svg/warning-sign.svg);
+  background-size: 40% 40%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .p {
   font-family: 'Manrope', sans-serif;
   font-size: 1.5vw;
@@ -211,12 +221,32 @@
   font-family: 'Manrope', sans-serif;
   font-size: 1.5vh;
 }
+.ph2 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 4vh;
+}
 .ph3 {
   font-family: 'Manrope', sans-serif;
 
   font-size: 1.75vh;
 }
+.ph4 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.25vh;
+}
+.ph5 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1vh;
+}
+.ph6 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 3vh;
+}
 .ph7 {
   font-family: 'Manrope', sans-serif;
   font-size: 2.5vh;
+}
+.ph8 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 5vh;
 }

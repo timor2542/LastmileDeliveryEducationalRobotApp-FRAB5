@@ -15,10 +15,10 @@ import React, { useState, useEffect } from "react"; // include React Library
 import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { Button, Col, Row } from "react-bootstrap";
 import { useMediaQuery } from "react-responsive";
-import { AiOutlineMenu } from "react-icons/ai"; // include React Icons Library
+// import { AiOutlineMenu } from "react-icons/ai"; // include React Icons Library
 import { BiReset } from "react-icons/bi"; // include React Icons Library
-import { FaWeight, FaLink } from "react-icons/fa"; // include React Icons Library
-import { GiExitDoor, GiStopSign } from "react-icons/gi"; // include React Icons Library
+// import { FaWeight, FaLink } from "react-icons/fa"; // include React Icons Library
+import { GiExitDoor} from "react-icons/gi"; // include React Icons Library
 import {
   ImArrowDown,
   ImArrowLeft,
@@ -40,14 +40,17 @@ let commandCharacteristic = null; // Command Characteristic Global Variable
 
 /* EXPORT DEFAULT FUNCTION SINGLEPLAYER CODE BEGIN */
 export default function Singleplayer() {
+  
+  // eslint-disable-next-line
   const [version, setVersion] = useState("1.4.0");
+  
   /* CALL HISTORY BEGIN */
   const history = useHistory();
 
   /* CALL HISTORY END */
 
   /* BACK BUTTON EVENT ON BROWNSER CODE BEGIN */
-  const onBackButtonEvent = async (event) => {
+  async function onBackButtonEvent(event) {
     event.preventDefault();
     await disconnectToBluetoothDevice();
     history.push("/");
@@ -56,7 +59,7 @@ export default function Singleplayer() {
   /* BACK BUTTON EVENT ON BROWNSER CODE END */
 
   /* EXIT BUTTON EVENT ON SINGLEPLAYER UI CODE BEGIN */
-  const onExitButtonEvent = async () => {
+  async function onExitButtonEvent() {
     // event.preventDefault();
     await disconnectToBluetoothDevice();
     history.push("/");
@@ -347,6 +350,7 @@ export default function Singleplayer() {
                     justifyContent: "left",
                     alignItems: "center",
                     textAlign: "left",
+                    wordBreak: "break-all",
                   }}
                   xs={3}
                 >
@@ -382,7 +386,6 @@ export default function Singleplayer() {
                   }}
                   xs={3}
                 >
-                  
                   {isBluetoothConnected ? (
                     <Button
                       size="lg"
@@ -441,6 +444,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#000000",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={6}
                 >
@@ -453,6 +457,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#000000",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={6}
                 >
@@ -466,7 +471,7 @@ export default function Singleplayer() {
                 style={{
                   alignItems: "center",
                   backgroundColor: "#FFFFFF",
-                  height: "5%",
+                  height: "8%",
                 }}
               >
                 {isBluetoothConnected ? (
@@ -475,6 +480,8 @@ export default function Singleplayer() {
                     style={{
                       backgroundColor: "#008000",
                       height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
                     }}
                     xs={6}
                   >
@@ -486,6 +493,8 @@ export default function Singleplayer() {
                     style={{
                       backgroundColor: "#FF0000",
                       height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
                     }}
                     xs={6}
                   >
@@ -504,7 +513,7 @@ export default function Singleplayer() {
 
               <Row
                 className=""
-                style={{ height: "3%", backgroundColor: "#FFFFFF" }}
+                style={{ height: "2%", backgroundColor: "#FFFFFF" }}
               ></Row>
               <Row
                 className=""
@@ -516,6 +525,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#000000",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={12}
                 >
@@ -529,7 +539,11 @@ export default function Singleplayer() {
               >
                 <Col
                   className="ph7 text-align-center border border-dark"
-                  style={{ height: "100%" }}
+                  style={{
+                    height: "100%",
+                    textAlign: "center",
+                    wordBreak: "break-all",
+                  }}
                   xs={12}
                 >
                   <Row xs={12}>{distanceEncoderSensorValue}&nbsp;&nbsp;m</Row>
@@ -547,6 +561,7 @@ export default function Singleplayer() {
                     backgroundColor: "#FFFFFF",
                     justifyContent: "left",
                     alignItems: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={3}
                 ></Col>
@@ -556,6 +571,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#000000",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={6}
                 >
@@ -568,6 +584,7 @@ export default function Singleplayer() {
                     backgroundColor: "#FFFFFF",
                     justifyContent: "right",
                     alignItems: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={3}
                 >
@@ -593,13 +610,25 @@ export default function Singleplayer() {
               </Row>
               <Row
                 className=""
-                style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                style={{ height: "3%", backgroundColor: "#FFFFFF" }}
               ></Row>
               <Row
                 className="ph7 text-align-center text-white p-1"
-                style={{ height: "10%", backgroundColor: "#000000" }}
+                style={{
+                  height: "10%",
+                  backgroundColor: "#000000",
+                  textAlign: "center",
+                }}
               >
-                <Col className="text-align-center" xs={12}>
+                <Col
+                  className="ph7 text-align-center text-white"
+                  style={{
+                    height: "100%",
+                    textAlign: "center",
+                    wordBreak: "break-all",
+                  }}
+                  xs={12}
+                >
                   <MdOutlineControlCamera />
                   &nbsp;&nbsp;Driving&nbsp;Directions
                 </Col>
@@ -738,7 +767,7 @@ export default function Singleplayer() {
                       // }}
                       xs={4}
                     >
-                      <Row className="text-align-center" xs={12}>
+                      {/* <Row className="text-align-center" xs={12}>
                         <Button
                           variant="primary"
                           size="lg"
@@ -781,7 +810,7 @@ export default function Singleplayer() {
                             <GiStopSign />
                           </Row>
                         </Button>
-                      </Row>
+                      </Row> */}
                     </Col>
                     <Col
                       // style={{
@@ -850,7 +879,7 @@ export default function Singleplayer() {
                       }}
                       xs={4}
                     >
-                      Singleplayer&nbsp;Mode
+                      Singleplayer<br/>Mode
                     </Col>
                     <Col
                       // style={{
@@ -925,15 +954,21 @@ export default function Singleplayer() {
       ) : (
         <Row className="vw-100 vh-100 p-1 mx-0 ">
           <Row className="p-1 mx-0">
-            <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
+            <Col style={{ backgroundColor: "#FFFFFF" }} xs={4}>
               <Row
                 style={{
                   alignItems: "center",
-                  height: "15%",
+                  height: "10%",
                   backgroundColor: "#FFFFFF",
                 }}
               >
-                <Col style={{ textAlign: "left" }}>
+                <Col
+                  style={{
+                    height: "100%",
+                    textAlign: "left",
+                    wordBreak: "break-all",
+                  }}
+                >
                   <Button
                     size="lg"
                     color="primary"
@@ -942,7 +977,7 @@ export default function Singleplayer() {
                       // await sendCommand(restartCommand);
                       await onExitButtonEvent();
                     }}
-                    style={{ height: "100%", width: "40%" }}
+                    style={{ height: "100%", width: "25%" }}
                   >
                     <Row className="p-arrow-button text-align-center" xs={12}>
                       <GiExitDoor />
@@ -952,24 +987,44 @@ export default function Singleplayer() {
               </Row>
               <Row
                 className="lastmilelogo mx-0"
-                style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                style={{ height: "20%", backgroundColor: "#FFFFFF" }}
               ></Row>
               <Row
                 className="p4 text-align-center p-1 mx-0"
                 style={{ height: "10%", backgroundColor: "#FFFFFF" }}
               >
-                Singleplayer Mode
+                <Col
+                  className="p3 text-align-center"
+                  style={{
+                    height: "100%",
+                    textAlign: "center",
+                    wordBreak: "break-all",
+                  }}
+                  xs={12}
+                >
+                  Singleplayer Mode
+                </Col>
               </Row>
               <Row
                 className="p text-align-center text-white p-1 text-white border border-white"
-                style={{ height: "15%", backgroundColor: "#000000" }}
+                style={{ height: "10%", backgroundColor: "#000000" }}
               >
-                <MdOutlineControlCamera />
-                Driving Directions
+                <Col
+                  className="p3 text-align-center text-white"
+                  style={{
+                    height: "100%",
+                    textAlign: "center",
+                    wordBreak: "break-all",
+                  }}
+                  xs={12}
+                >
+                  <MdOutlineControlCamera />
+                  &nbsp;&nbsp;Driving&nbsp;Directions
+                </Col>
               </Row>
               <Row
                 className="p5 text-align-center border border-dark"
-                style={{ height: "45%", backgroundColor: "#FFFFFF" }}
+                style={{ height: "50%", backgroundColor: "#FFFFFF" }}
               >
                 <div style={{ display: "block", height: "99%", width: "100%" }}>
                   <Row
@@ -1101,7 +1156,7 @@ export default function Singleplayer() {
                       // }}
                       xs={4}
                     >
-                      <Row className="text-align-center" xs={12}>
+                      {/* <Row className="text-align-center" xs={12}>
                         <Button
                           variant="primary"
                           size="lg"
@@ -1144,7 +1199,7 @@ export default function Singleplayer() {
                             <GiStopSign />
                           </Row>
                         </Button>
-                      </Row>
+                      </Row> */}
                     </Col>
                     <Col
                       // style={{
@@ -1270,13 +1325,13 @@ export default function Singleplayer() {
                 </div>
               </Row>
             </Col>
-            <Col style={{ backgroundColor: "#FFFFFF" }} xs={7}>
+            <Col style={{ backgroundColor: "#FFFFFF" }} xs={6}>
               <Row
                 className="p-1"
                 style={{
                   alignItems: "flex-start",
                   backgroundColor: "#FFFFFF",
-                  height: "15%",
+                  height: "10%",
                 }}
               >
                 <Col
@@ -1285,6 +1340,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#000000",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={6}
                 >
@@ -1297,6 +1353,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#000000",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={6}
                 >
@@ -1310,15 +1367,17 @@ export default function Singleplayer() {
                 style={{
                   alignItems: "center",
                   backgroundColor: "#FFFFFF",
-                  height: "15%",
+                  height: "12%",
                 }}
               >
                 {isBluetoothConnected ? (
                   <Col
-                    className="p7 text-align-center text-white border border-dark"
+                    className="p3 text-align-center text-white border border-dark"
                     style={{
                       backgroundColor: "#008000",
                       height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
                     }}
                     xs={6}
                   >
@@ -1326,10 +1385,12 @@ export default function Singleplayer() {
                   </Col>
                 ) : (
                   <Col
-                    className="p7 text-align-center text-white border border-dark"
+                    className="p3 text-align-center text-white border border-dark"
                     style={{
                       backgroundColor: "#FF0000",
                       height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
                     }}
                     xs={6}
                   >
@@ -1338,8 +1399,12 @@ export default function Singleplayer() {
                 )}
 
                 <Col
-                  className="p7 text-align-center border border-dark"
-                  style={{ height: "100%" }}
+                  className="p3 text-align-center border border-dark"
+                  style={{
+                    height: "100%",
+                    textAlign: "center",
+                    wordBreak: "break-all",
+                  }}
                   xs={6}
                 >
                   <Row xs={12}>{bluetoothDeviceName}</Row>
@@ -1368,6 +1433,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#000000",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={12}
                 >
@@ -1385,7 +1451,11 @@ export default function Singleplayer() {
               >
                 <Col
                   className="p7 text-align-center border border-dark"
-                  style={{ height: "100%" }}
+                  style={{
+                    height: "100%",
+                    textAlign: "center",
+                    wordBreak: "break-all",
+                  }}
                   xs={12}
                 >
                   <Row xs={12}>{distanceEncoderSensorValue}&nbsp;&nbsp;m</Row>
@@ -1405,6 +1475,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#FFFFFF",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={3}
                 ></Col>
@@ -1414,6 +1485,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#000000",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={6}
                 >
@@ -1426,6 +1498,7 @@ export default function Singleplayer() {
                     backgroundColor: "#FFFFFF",
                     justifyContent: "left",
                     alignItems: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={3}
                 >
@@ -1467,7 +1540,7 @@ export default function Singleplayer() {
                 style={{
                   alignItems: "flex-start",
                   backgroundColor: "#FFFFFF",
-                  height: "15%",
+                  height: "10%",
                 }}
               >
                 <Col
@@ -1476,6 +1549,7 @@ export default function Singleplayer() {
                     height: "100%",
                     backgroundColor: "#000000",
                     textAlign: "center",
+                    wordBreak: "break-all",
                   }}
                   xs={12}
                 >
@@ -1494,8 +1568,10 @@ export default function Singleplayer() {
                 <Col
                   style={{
                     display: "flex",
+                    height:"100%",
                     justifyContent: "right",
                     alignItems: "flex-start",
+                    wordBreak: "break-all",
                   }}
                   xs={12}
                 >
@@ -1547,7 +1623,7 @@ export default function Singleplayer() {
                 style={{
                   alignItems: "center",
                   backgroundColor: "#FFFFFF",
-                  height: "70%",
+                  height: "75%",
                 }}
               ></Row>
               <Row
@@ -1565,6 +1641,7 @@ export default function Singleplayer() {
                     justifyContent: "right",
                     alignItems: "flex-end",
                     height: "100%",
+                    wordBreak: "break-all",
                   }}
                   xs={12}
                 >

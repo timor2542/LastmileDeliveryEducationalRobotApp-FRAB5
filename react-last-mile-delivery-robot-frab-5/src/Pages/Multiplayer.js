@@ -11,40 +11,21 @@
 
 /* REACT LIBRARY TOPICS RELATED CODE BEGIN */
 
-import React, { useState, useEffect } from "react"; // include React Library
+import React, { useState, useEffect, useRef, useCallback } from "react"; // include React Library
 import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { Button, Col, Row, Form } from "react-bootstrap";
 import { useMediaQuery } from "react-responsive";
 import { FullScreen, useFullScreenHandle } from "react-full-screen";
 /* INCLUDE FORWARD REFERENCE TO ADD ICON ON MATERIAL TABLE CODE BEGIN */
-import { forwardRef } from "react"; // include React Forward Reference Library
 
-import AddBox from "@material-ui/icons/AddBox";
-import ArrowDownward from "@material-ui/icons/ArrowDownward";
-import Check from "@material-ui/icons/Check";
-import ChevronLeft from "@material-ui/icons/ChevronLeft";
-import ChevronRight from "@material-ui/icons/ChevronRight";
-import Clear from "@material-ui/icons/Clear";
-import DeleteOutline from "@material-ui/icons/DeleteOutline";
-import Edit from "@material-ui/icons/Edit";
-import FilterList from "@material-ui/icons/FilterList";
-import FirstPage from "@material-ui/icons/FirstPage";
-import LastPage from "@material-ui/icons/LastPage";
-import Remove from "@material-ui/icons/Remove";
-import SaveAlt from "@material-ui/icons/SaveAlt";
-import Search from "@material-ui/icons/Search";
-import ViewColumn from "@material-ui/icons/ViewColumn";
-import RateReviewIcon from "@material-ui/icons/RateReview";
-
-import MaterialTable from "material-table";
-
+// import { BiReset } from "react-icons/bi";
 /* INCLUDE FORWARD REFERENCE TO ADD ICON ON MATERIAL TABLE CODE END */
 
 import { AiOutlineMenu } from "react-icons/ai"; // include React Icons Library
-import {RiArrowGoBackFill} from "react-icons/ri";
-import { BsArrowsFullscreen, BsFullscreenExit } from "react-icons/bs"; 
-import { FaWeight, FaLink, FaHome, FaUsers } from "react-icons/fa"; // include React Icons Library
-import { GiExitDoor, GiStopSign } from "react-icons/gi"; // include React Icons Library
+// import { RiArrowGoBackFill } from "react-icons/ri";
+// import { BsArrowsFullscreen, BsFullscreenExit } from "react-icons/bs";
+import { FaHome, FaUsers } from "react-icons/fa"; // include React Icons Library
+import { GiExitDoor } from "react-icons/gi"; // include React Icons Library
 import {
   ImArrowDown,
   ImArrowLeft,
@@ -61,7 +42,29 @@ import { SiProbot } from "react-icons/si"; // include React Icons Library
 import { MdPin, MdOutlineTimer } from "react-icons/md"; // include React Icons Library
 import { db } from "../Firebase/Firebase"; // include Firebase Library
 import get from "../universalHTTPRequests/get"; // include Firebase fetching Library
+import { SiStatuspal } from "react-icons/si";
 
+import DataGrid, {
+  Column,
+  // Export,
+  Editing,
+  Grouping,
+  GroupPanel,
+  // Paging,
+  SearchPanel,
+  Toolbar,
+  Item,
+  Sorting,
+  Scrolling,
+} from "devextreme-react/data-grid";
+// import { employees } from "./datatest.js";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import { Workbook } from "exceljs";
+import { saveAs } from "file-saver";
+import { Button as ButtonD } from "devextreme-react/button";
+import { exportDataGrid as exportDataGridPDF } from "devextreme/pdf_exporter";
+import { exportDataGrid as exportDataGridExcel } from "devextreme/excel_exporter";
 let bluetoothDevice = null; // Bluetooth Device Name Variable
 // let weightSensorCharacteristic = null; // Weight Sensor Characteristic Variable
 let distanceEncoderSensorCharacteristic = null; // Distance Encoder Sensor Characteristic Variable
@@ -71,46 +74,53 @@ let startTime = 0; // Last Elaspsed Time Update Varaible
 let elapsedTime = 0; // Current Elaspsed Time Update Varaible
 let intervalId = null; // Interval to increase Time Variable
 
+let _hoursTimeFinishedRecord = "0";
+let _minutesTimeFinishedRecord = "00";
+let _secondsTimeFinishedRecord = "00";
+
 /* EXPORT DEFAULT FUNCTION MULTIPLAYER CODE BEGIN */
 export default function Multiplayer() {
   const handle = useFullScreenHandle();
+
+  // eslint-disable-next-line
   const [version, setVersion] = useState("1.4.0");
   /* CALL HISTORY CODE BEGIN */
   const history = useHistory();
+  const dataGridRef = useRef();
 
-  /* CALL HISTORY CODE END */
+  // eslint-disable-next-line
+  const exportGridPDF = useCallback(() => {
+    const doc = new jsPDF();
+    const dataGrid = dataGridRef.current.instance;
 
-  /* TABLE ICON ON LEADERBOARD CODE BEGIN */
-  const tableIcons = {
-    Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
-    Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
-    Clear: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-    Delete: forwardRef((props, ref) => <DeleteOutline {...props} ref={ref} />),
-    DetailPanel: forwardRef((props, ref) => (
-      <ChevronRight {...props} ref={ref} />
-    )),
-    Edit: forwardRef((props, ref) => <Edit {...props} ref={ref} />),
-    Export: forwardRef((props, ref) => <SaveAlt {...props} ref={ref} />),
-    Filter: forwardRef((props, ref) => <FilterList {...props} ref={ref} />),
-    FirstPage: forwardRef((props, ref) => <FirstPage {...props} ref={ref} />),
-    LastPage: forwardRef((props, ref) => <LastPage {...props} ref={ref} />),
-    NextPage: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-    PreviousPage: forwardRef((props, ref) => (
-      <ChevronLeft {...props} ref={ref} />
-    )),
-    ResetSearch: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-    Search: forwardRef((props, ref) => <Search {...props} ref={ref} />),
-    SortArrow: forwardRef((props, ref) => (
-      <ArrowDownward {...props} ref={ref} />
-    )),
-    ThirdStateCheck: forwardRef((props, ref) => (
-      <Remove {...props} ref={ref} />
-    )),
-    ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />),
-    RateReview: forwardRef((props, ref) => (
-      <RateReviewIcon {...props} ref={ref} />
-    )),
+    exportDataGridPDF({
+      jsPDFDocument: doc,
+      component: dataGrid,
+    }).then(() => {
+      doc.save(String(roomHostName) + " 's Result.pdf");
+    });
+  });
+  const exportGridExcel = (e) => {
+    const workbook = new Workbook();
+    const worksheet = workbook.addWorksheet("Main sheet");
+    const dataGrid = dataGridRef.current.instance;
+
+    exportDataGridExcel({
+      component: dataGrid,
+      worksheet,
+      autoFilterEnabled: true,
+    }).then(() => {
+      workbook.xlsx.writeBuffer().then((buffer) => {
+        saveAs(
+          new Blob([buffer], { type: "application/octet-stream" }),
+          String(roomHostName) + " 's Result.xlsx"
+        );
+      });
+    });
+    e.cancel = true;
   };
+  // }
+  /* CALL HISTORY CODE END */
 
   /* TABLE ICON ON LEADERBOARD CODE END */
 
@@ -121,11 +131,11 @@ export default function Multiplayer() {
     // window.alert("You go back")
     if (getInClassRoom) {
       if (isHost) {
-        db.ref("gameSessions/" + getPIN).remove();
+        await db.ref("gameSessions/" + getPIN).remove();
       } else {
-        db.ref(
-          "gameSessions/" + getPIN + "/players/" + groupPlayerName
-        ).remove();
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .remove();
       }
     }
     await disconnectToBluetoothDeviceImmediately();
@@ -135,22 +145,22 @@ export default function Multiplayer() {
   /* BACK BUTTON EVENT ON BROWNSER CODE END */
 
   /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE BEGIN */
-  const onExituttonEvent = async () => {
+  async function onExitButtonEvent() {
     // event.preventDefault();
     // your logic
     await disconnectToBluetoothDeviceImmediately();
     setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
     if (getInClassRoom) {
       if (isHost) {
-        db.ref("gameSessions/" + getPIN).remove();
+        await db.ref("gameSessions/" + getPIN).remove();
       } else {
-        db.ref(
-          "gameSessions/" + getPIN + "/players/" + groupPlayerName
-        ).remove();
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .remove();
       }
     }
     history.push("/");
-  };
+  }
   /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE END */
   /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE BEGIN */
   const onBeforeUnload = async (event) => {
@@ -170,11 +180,11 @@ export default function Multiplayer() {
     setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
     if (getInClassRoom) {
       if (isHost) {
-        db.ref("gameSessions/" + getPIN).remove();
+        await db.ref("gameSessions/" + getPIN).remove();
       } else {
-        db.ref(
-          "gameSessions/" + getPIN + "/players/" + groupPlayerName
-        ).remove();
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .remove();
       }
     }
   };
@@ -243,10 +253,8 @@ export default function Multiplayer() {
   const backwardCommand = 0x51;
   const stopCommand = 0x54;
   // const restartCommand = 0x55;
-
-  const [weightSensorValue, setWeightSensorValue] = useState(0);
   const [distanceEncoderSensorValue, setDistanceEncoderSensorValue] = useState(
-    (0).toFixed(1)
+    (0).toFixed(3)
   );
 
   const [isUpButtonPressed, setIsUpButtonPressed] = useState(false);
@@ -257,9 +265,13 @@ export default function Multiplayer() {
   const [isDirectionButtonReleased, setIsDirectionButtonReleased] =
     useState(false);
 
+  const [isUserFinished, setIsUserFinished] = useState(false);
+  const [isUserAlreadyFinished, setIsUserAlreadyFinished] = useState(false);
+
+  const [isCloseResetTimerButton, setIsCloseResetTimerButton] = useState(true);
+
   async function onDisconnected(event) {
-    setWeightSensorValue(0);
-    setDistanceEncoderSensorValue((0).toFixed(1));
+    setDistanceEncoderSensorValue((0).toFixed(3));
 
     // await bluetoothDevice.gatt.disconnect();
 
@@ -327,14 +339,18 @@ export default function Multiplayer() {
       setBluetoothDeviceName(bluetoothDevice.name);
 
       // console.log(bluetoothDevice.name);
-      db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
-        deviceName: bluetoothDevice.name,
-      });
+      if (getInClassRoom && groupPlayerName.trim() !== "") {
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .update({
+            deviceName: bluetoothDevice.name,
+            parcelCorrectCount: 0,
+          });
+      }
       setIsBluetoothConnected(true);
       // sendCommand(0x57);
     } catch {
-      setWeightSensorValue(0);
-      setDistanceEncoderSensorValue((0).toFixed(1));
+      setDistanceEncoderSensorValue((0).toFixed(3));
 
       // await bluetoothDevice.gatt.disconnect();
 
@@ -343,11 +359,15 @@ export default function Multiplayer() {
       commandCharacteristic = null;
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
-      db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
-        deviceName: "Not connected",
-        distanceSensorValue: parseFloat((0).toFixed(1)),
-        weightSensorValue: parseInt(0),
-      });
+      if (getInClassRoom && groupPlayerName.trim() !== "") {
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .update({
+            deviceName: "Not connected",
+            distanceSensorValue: parseFloat((0).toFixed(3)),
+            parcelCorrectCount: 0,
+          });
+      }
       setIsBluetoothConnected(false);
     }
   }
@@ -374,8 +394,7 @@ export default function Multiplayer() {
       // sendCommand(0x56);
       // resetAllValue();
 
-      setWeightSensorValue(0);
-      setDistanceEncoderSensorValue((0).toFixed(1));
+      setDistanceEncoderSensorValue((0).toFixed(3));
 
       await bluetoothDevice.gatt.disconnect();
 
@@ -385,18 +404,17 @@ export default function Multiplayer() {
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
       if (!gotAlreadyHostLeftDetected) {
-        db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
-          {
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .update({
             deviceName: "Not connected",
-            distanceSensorValue: parseFloat((0).toFixed(1)),
-            weightSensorValue: parseInt(0),
-          }
-        );
+            distanceSensorValue: parseFloat((0).toFixed(3)),
+            parcelCorrectCount: 0,
+          });
       }
       setIsBluetoothConnected(false);
     } catch {
-      setWeightSensorValue(0);
-      setDistanceEncoderSensorValue((0).toFixed(1));
+      setDistanceEncoderSensorValue((0).toFixed(3));
 
       // await bluetoothDevice.gatt.disconnect();
 
@@ -406,13 +424,13 @@ export default function Multiplayer() {
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
       if (!gotAlreadyHostLeftDetected) {
-        db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
-          {
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .update({
             deviceName: "Not connected",
-            distanceSensorValue: parseFloat((0).toFixed(1)),
-            weightSensorValue: parseInt(0),
-          }
-        );
+            distanceSensorValue: parseFloat((0).toFixed(3)),
+            parcelCorrectCount: 0,
+          });
       }
       setIsBluetoothConnected(false);
     }
@@ -441,29 +459,17 @@ export default function Multiplayer() {
       // sendCommand(0x56);
       // resetAllValue();
 
-      setWeightSensorValue(0);
-      setDistanceEncoderSensorValue((0).toFixed(1));
+      setDistanceEncoderSensorValue((0).toFixed(3));
 
       await bluetoothDevice.gatt.disconnect();
 
-      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
-      // if (!gotAlreadyHostLeftDetected) {
-      //   db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
-      //     {
-      //       deviceName: "Not connected",
-      //       distanceSensorValue: parseFloat((0).toFixed(1)),
-      //       weightSensorValue: parseInt(0),
-      //     }
-      //   );
-      // }
       setIsBluetoothConnected(false);
     } catch {
-      setWeightSensorValue(0);
-      setDistanceEncoderSensorValue((0).toFixed(1));
+      setDistanceEncoderSensorValue((0).toFixed(3));
 
       // await bluetoothDevice.gatt.disconnect();
 
@@ -472,39 +478,9 @@ export default function Multiplayer() {
       commandCharacteristic = null;
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
-      // if (!gotAlreadyHostLeftDetected) {
-      //   db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
-      //     {
-      //       deviceName: "Not connected",
-      //       distanceSensorValue: parseFloat((0).toFixed(1)),
-      //       weightSensorValue: parseInt(0),
-      //     }
-      //   );
-      // }
       setIsBluetoothConnected(false);
     }
   }
-  // async function handleWeightSensorNotifications(event) {
-  //   try {
-  //     let value = event.target.value;
-  //     let result = 0;
-  //     // Convert raw data bytes to hex values just for the sake of showing something.
-  //     // In the "real" world, you'd use data.getUint8, data.getUint16 or even
-  //     // TextDecoder to process raw data bytes.
-  //     for (let i = 0; i < value.byteLength; i++) {
-  //       result += value.getUint8(i) << (8 * i);
-  //     }
-
-  //     setWeightSensorValue(result);
-  //     if (getInClassRoom) {
-  //       db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
-  //         {
-  //           weightSensorValue: parseInt(result),
-  //         }
-  //       );
-  //     }
-  //   } catch {}
-  // }
   async function handleDistanceEncoderSensorNotifications(event) {
     try {
       let value = event.target.value;
@@ -516,13 +492,13 @@ export default function Multiplayer() {
         result += value.getUint8(i) << (8 * i);
       }
       // setDistanceEncoderSensorValue(result);
-      setDistanceEncoderSensorValue((result / 10).toFixed(1));
-      if (getInClassRoom) {
-        db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
-          {
-            distanceSensorValue: parseFloat((result / 10).toFixed(1)),
-          }
-        );
+      setDistanceEncoderSensorValue((result / 1000).toFixed(3));
+      if (getInClassRoom && groupPlayerName.trim() !== "") {
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .update({
+            distanceSensorValue: parseFloat((result / 1000).toFixed(3)),
+          });
       }
       // setDistanceEncoderSensorValue((0.00329119230376073577362753116344*result).toFixed(1));
     } catch {}
@@ -558,8 +534,7 @@ export default function Multiplayer() {
     setIsRightButtonPressed(true);
     setIsStopButtonPressed(true);
 
-    // setWeightSensorValue(0);
-    setDistanceEncoderSensorValue((0).toFixed(1));
+    setDistanceEncoderSensorValue((0).toFixed(3));
 
     await sendCommand(0x56);
 
@@ -637,12 +612,15 @@ export default function Multiplayer() {
       if (data) {
         setFSMPage("MULTIPLAYER_MODE_ERRORPLAYERNAMETAKEN_PAGE");
       } else {
-        db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).set({
-          groupName: groupPlayerName,
-          deviceName: "Not connected",
-          distanceSensorValue: parseFloat((0).toFixed(1)),
-          weightSensorValue: parseInt(0),
-        });
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .set({
+            groupName: groupPlayerName,
+            deviceName: "Not connected",
+            parcelCorrectCount: 0,
+            distanceSensorValue: parseFloat((0).toFixed(3)),
+            timeFinishedRecord: "0 : 00 : 00",
+          });
         // resetStopwatch();
         setFSMPage("MULTIPLAYER_MODE_PLAYER_CONTROLPANEL_PAGE");
 
@@ -682,7 +660,7 @@ export default function Multiplayer() {
         checkRoomHostName();
       } else {
         // resetStopwatch();
-        db.ref("gameSessions/" + generatedPin.toString()).set({
+        await db.ref("gameSessions/" + generatedPin.toString()).set({
           gameAlreadyStarted: false,
           gameStarted: false,
           timeIsActived: false,
@@ -742,7 +720,7 @@ export default function Multiplayer() {
     minutesElapsedTime: 0,
     hoursElapsedTime: 0,
   });
-  function resetStopwatch() {
+  async function resetStopwatch() {
     setTimeIsActive(false);
     setTimeIsPaused(false);
     elapsedTime = 0;
@@ -757,12 +735,12 @@ export default function Multiplayer() {
   }
 
   //method to start the stopwatch
-  function startStopwatch() {
+  async function startStopwatch() {
     setTimeIsActive(true);
     setTimeIsPaused(true);
     startTime = Date.now();
     //run setInterval() and save id
-    intervalId = setInterval(function () {
+    intervalId = setInterval(async function () {
       //calculate elapsed time
       const time = Date.now() - startTime + elapsedTime;
 
@@ -778,12 +756,65 @@ export default function Multiplayer() {
         minutesElapsedTime: minutes,
         hoursElapsedTime: hours,
       });
+
+      // _hoursTimeFinishedRecord = String(hours);
+      // if (minutes < 10) {
+      //   _minutesTimeFinishedRecord = "0" + String(minutes);
+      // } else {
+      //   _minutesTimeFinishedRecord = String(minutes);
+      // }
+      // if (seconds < 10) {
+      //   _secondsTimeFinishedRecord = "0" + String(seconds);
+      // } else {
+      //   _secondsTimeFinishedRecord = String(seconds);
+      // }
+      // if (getInClassRoom && groupPlayerName.trim() !== "" && !isUserFinished) {
+      //   await db
+      //     .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+      //     .update({
+      //       timeFinishedRecord:
+      //         _hoursTimeFinishedRecord +
+      //         " : " +
+      //         _minutesTimeFinishedRecord +
+      //         " : " +
+      //         _secondsTimeFinishedRecord,
+      //     });
+      // }
     }, 1);
   }
-  function stopStopwatch() {
+  async function stopStopwatch() {
     setTimeIsPaused(false);
     elapsedTime += Date.now() - startTime;
     clearInterval(intervalId);
+    _hoursTimeFinishedRecord = String(stopwatchElapsedTime.hoursElapsedTime);
+    if (stopwatchElapsedTime.minutesElapsedTime < 10) {
+      _minutesTimeFinishedRecord =
+        "0" + String(stopwatchElapsedTime.minutesElapsedTime);
+    } else {
+      _minutesTimeFinishedRecord = String(
+        stopwatchElapsedTime.minutesElapsedTime
+      );
+    }
+    if (stopwatchElapsedTime.secondsElapsedTime < 10) {
+      _secondsTimeFinishedRecord =
+        "0" + String(stopwatchElapsedTime.secondsElapsedTime);
+    } else {
+      _secondsTimeFinishedRecord = String(
+        stopwatchElapsedTime.secondsElapsedTime
+      );
+    }
+    if (getInClassRoom && groupPlayerName.trim() !== "") {
+      await db
+        .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+        .update({
+          timeFinishedRecord:
+            _hoursTimeFinishedRecord +
+            " : " +
+            _minutesTimeFinishedRecord +
+            " : " +
+            _secondsTimeFinishedRecord,
+        });
+    }
   }
 
   /* STOPWATCH TIMER CONTROL CODE END */
@@ -935,7 +966,7 @@ export default function Multiplayer() {
 
   /* PORTRAIT RELATED CODE BEGIN */
   // if (getInClassRoom && !isHost) {
-  if (gotStart) {
+  if (gotStart && !isUserFinished) {
     if (!gotAlreadyStart) {
       setGotAlreadyStart(true);
       // console.log("Start");
@@ -943,7 +974,7 @@ export default function Multiplayer() {
     }
     setGotStart(false);
   }
-  if (gotStop) {
+  if (gotStop && !isUserFinished) {
     if (!gotAlreadyStop) {
       setGotAlreadyStop(true);
       // console.log("Stop");
@@ -958,8 +989,55 @@ export default function Multiplayer() {
       // console.log("Reset");
       resetStopwatch();
       resetAllValue();
+      setIsUserFinished(false);
+      setIsUserAlreadyFinished(false);
+
+      if (getInClassRoom && groupPlayerName.trim() !== "") {
+        db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
+          {
+            timeFinishedRecord: "0 : 00 : 00",
+            parcelCorrectCount: 0,
+          }
+        );
+      }
     }
     setGotReset(false);
+  }
+  if (isUserFinished) {
+    if (!isUserAlreadyFinished) {
+      setIsUserAlreadyFinished(true);
+      stopStopwatch();
+      sendCommand(stopCommand);
+      // _hoursTimeFinishedRecord = String(stopwatchElapsedTime.hoursElapsedTime);
+      // if (stopwatchElapsedTime.minutesElapsedTime < 10) {
+      //   _minutesTimeFinishedRecord =
+      //     "0" + String(stopwatchElapsedTime.minutesElapsedTime);
+      // } else {
+      //   _minutesTimeFinishedRecord = String(
+      //     stopwatchElapsedTime.minutesElapsedTime
+      //   );
+      // }
+      // if (stopwatchElapsedTime.secondsElapsedTime < 10) {
+      //   _secondsTimeFinishedRecord =
+      //     "0" + String(stopwatchElapsedTime.secondsElapsedTime);
+      // } else {
+      //   _secondsTimeFinishedRecord = String(
+      //     stopwatchElapsedTime.secondsElapsedTime
+      //   );
+      // }
+      // if (getInClassRoom && groupPlayerName.trim() !== "") {
+      //   db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
+      //     {
+      //       timeFinishedRecord:
+      //         _hoursTimeFinishedRecord +
+      //         " : " +
+      //         _minutesTimeFinishedRecord +
+      //         " : " +
+      //         _secondsTimeFinishedRecord,
+      //     }
+      //   );
+      // }
+    }
   }
   if (gotHostLeftDetected) {
     if (!gotAlreadyHostLeftDetected) {
@@ -971,14 +1049,6 @@ export default function Multiplayer() {
     }
     setGotHostLeftDetected(false);
   }
-  // }
-  // if screen is portrait, stop motor on robot while connnected.
-  if (isPortrait) {
-    if (isBluetoothConnected && bluetoothDeviceName !== "Not connected") {
-      sendCommand(stopCommand);
-    }
-  }
-
   /* PORTRAIT RELATED CODE END */
   /* BACK BUTTON DETECTION TO REMOVE DATA IN FIREBASE CODE BEGIN */
   useEffect(() => {
@@ -986,11 +1056,11 @@ export default function Multiplayer() {
     history.block(async () => {
       if (getInClassRoom) {
         if (isHost) {
-          db.ref("gameSessions/" + getPIN).remove();
+          await db.ref("gameSessions/" + getPIN).remove();
         } else {
-          db.ref(
-            "gameSessions/" + getPIN + "/players/" + groupPlayerName
-          ).remove();
+          await db
+            .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+            .remove();
         }
       }
     });
@@ -998,91 +1068,115 @@ export default function Multiplayer() {
   /* BACK BUTTON DETECTION TO REMOVE DATA IN FIREBASE CODE END */
 
   /* FETCHING DATA ON FIREBASE CONTROL CODE END */
+  // const [editRowKey, setEditRowKey] = useState(null);
+
+  const onChangesChange = useCallback(async (changes) => {
+    //  await db
+    //       .ref("gameSessions/" + getPIN + "/players/" + editRowKey)
+    //       .remove();
+    //     }
+    if (changes.length > 0) {
+      // console.log(changes[0].key)
+      // console.log(changes[0].data)
+      if (getInClassRoom) {
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + changes[0].key)
+          .update({
+            parcelCorrectCount: changes[0].data.parcelCorrectCount,
+          });
+      }
+    }
+
+
+  }, [getInClassRoom, getPIN]);
+
+  // const onEditRowKeyChange = React.useCallback((editRowKey) => {
+  //   console.log(editRowKey);
+  // }, []);
+
   /* FINITE STATE MACHINE PAGE CODE BEGIN */
 
   if (FSMPage === "MULTIPLAYER_MODE_HOMEPAGE") {
     return (
       <FullScreen handle={handle}>
-      <div
-        className="vw-100 vh-100 mx-0"
-        style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
-      >
-        {isPortrait ? (
-          <Row className="vw-100 vh-100 p-1 mx-0">
-            <Row className="p-3 mx-0" xs={12}>
-              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
-              <Row
-                  style={{alignItems:"center",height: "10%", backgroundColor: "#FFFFFF" }}
-                >
-                  <Col style={{textAlign:"right"}}>
-                    {handle.active ? (
+        <div
+          className="vw-100 vh-100 mx-0"
+          style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
+        >
+          {isPortrait ? (
+            <Row className="vw-100 vh-100 p-1 mx-0">
+              <Row className="p-3 mx-0" xs={12}>
+                <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                  <Row
+                    className="p-1"
+                    style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                  >
+                    <Col
+                      style={{
+                        height: "100%",
+                        justifyContent: "left",
+                        alignItems: "center",
+                        textAlign: "left",
+                      }}
+                      xs={3}
+                    >
                       <Button
                         size="lg"
                         color="primary"
-                        variant="outline-dark"
-                      style={{ height: "100%" }}
-                        onClick={handle.exit}
+                        variant="outline-danger"
+                        onClick={async () => {
+                          await onExitButtonEvent();
+                        }}
                       >
-                        <Row className="ph3 text-align-center" xs={12}>
-                          <BsFullscreenExit />
+                        <Row
+                          className="p-arrow-button text-align-center"
+                          xs={12}
+                        >
+                          <GiExitDoor />
                         </Row>
                       </Button>
-                    ) : (
-                      <Button
-                        size="lg"
-                        color="primary"
-                        variant="outline-dark"
-                        
-                      style={{height: "50%" }}
-                        onClick={handle.enter}
-                      >
-                        <Row className="ph3 text-align-center" xs={12}>
-                          <BsArrowsFullscreen />
-                        </Row>
-                      </Button>
-                    )}
                     </Col>
-                </Row>
-              <Row
-                  className="lastmilelogo p-3 mx-0"
-                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
-                  xs={12}
-                >
-                </Row>
-                <Row
-                  className="p7 p-bold p-1 mx-0 "
-                  style={{ height: "70%", backgroundColor: "#E7E6E1" }}
-                  xs={12}
-                >
-                  <Col
-                    className="p7"
-                    style={{ backgroundColor: "#E7E6E1" }}
-                    xs={6}
+                  </Row>
+                  <Row
+                    className="lastmilelogo p-3 mx-0"
+                    style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                    xs={12}
+                  ></Row>
+                  <Row
+                    className="ph7 p-bold p-1 mx-0 "
+                    style={{
+                      justifyContent: "center",
+                      alignItems: "center",
+                      textAlign: "center",
+                      height: "70%",
+                      backgroundColor: "#E7E6E1",
+                    }}
+                    xs={12}
                   >
                     <Row
-                      className="p7 text-align-center p-bold p-1 mx-0"
-                      style={{ height: "20%" }}
+                      className="ph7 text-align-center p-bold"
+                      style={{ height: "10%" }}
                     >
                       Player
                     </Row>
                     <Row
-                      className="p4 text-align-center"
-                      style={{ height: "10%" }}
+                      className="ph4 text-align-center"
+                      style={{ height: "5%" }}
                     >
                       Join an activity with a PIN provided by the host.
                     </Row>
                     <Row
-                      className="p text-align-center"
-                      style={{ height: "30%" }}
+                      className="ph text-align-center"
+                      style={{ height: "10%" }}
                     >
                       <Row
-                        className="p text-align-center"
+                        className="ph text-align-center"
                         style={{ width: "80%", height: "100%" }}
                       >
                         <Form>
                           <Form.Group>
                             <Form.Control
-                              size="lg"
+                              size="md"
                               placeholder="Game PIN"
                               variant="outlined"
                               value={PIN}
@@ -1099,223 +1193,206 @@ export default function Multiplayer() {
                       </Row>
                     </Row>
                     <Row
-                      className="p4 text-align-center"
-                      style={{ height: "20%" }}
-                    >
-                      <Row
-                        className="p4 text-align-center"
-                        style={{ width: "75%", height: "30%" }}
-                      >
-                        <Button
-                          size="lg"
-                          color="primary"
-                          onClick={async () => {
-                            await JoinSession();
-                          }}
-                        >
-                          <Row className="p3 text-align-center" xs={12}>
-                            Join Session
-                          </Row>
-                        </Button>
-                      </Row>
-                    </Row>
-                  </Col>
-                  <Col
-                    className="p7"
-                    style={{ backgroundColor: "#E7E6E1" }}
-                    xs={6}
-                  >
-                    <Row
-                      className="p7 text-align-center p-bold p-1 mx-0"
-                      style={{ height: "20%" }}
-                    >
-                      Host
-                    </Row>
-                    <Row
-                      className="p4 text-align-center"
-                      style={{ height: "10%" }}
-                    >
-                      Host a live game or share a game with remote players.
-                    </Row>
-                    <Row
-                      className="p7 text-align-center"
-                      style={{ height: "20%" }}
+                      className="ph4 text-align-center"
+                      style={{ width: "75%", height: "10%" }}
                     >
                       <Button
                         size="lg"
                         color="primary"
-                        style={{ width: "75%" }}
                         onClick={async () => {
-                          CreateSession();
+                          await JoinSession();
                         }}
                       >
-                        <Row className="p3 text-align-center" xs={12}>
-                          Create Session
+                        <Row className="ph3 text-align-center" xs={12}>
+                          Join Session
                         </Row>
                       </Button>
                     </Row>
                     <Row
-                      className="p7 text-align-center"
-                      style={{ height: "50%" }}
+                      className="ph7 text-align-center p-bold "
+                      style={{ height: "10%" }}
+                    >
+                      Host
+                    </Row>
+                    <Row
+                      className="ph4 text-align-center"
+                      style={{ height: "5%" }}
+                    >
+                      Host a live game or share a game with remote players.
+                    </Row>
+                    <Row
+                      className="ph7 text-align-center"
+                      style={{ width: "75%", height: "10%" }}
                     >
                       <Button
-                        size="sm"
-                        variant="danger"
-                        style={{ width: "75%" }}
-                        onClick={() => history.push("/")}
+                        size="lg"
+                        color="primary"
+                        onClick={async () => {
+                          CreateSession();
+                        }}
                       >
-                        <Row className="p3 text-align-center" xs={12}>
-                          <FaHome />
-                          Go Back to Homepage
+                        <Row className="ph3 text-align-center" xs={12}>
+                          Create Session
                         </Row>
                       </Button>
                     </Row>
-                  </Col>
-                </Row>
-                <Row
-                  className="p4 text-align-center p-1 mx-0"
-                  style={{ height: "10%" }}
-                  xs={12}
-                >
-                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
-                </Row>
-              </Col>
+                  </Row>
+                  <Row
+                    className="ph4 text-align-center p-1 mx-0"
+                    style={{ height: "10%" }}
+                    xs={12}
+                  >
+                    Version {version} | © {new Date().getFullYear()} FRAB5
+                    Thesis.
+                  </Row>
+                </Col>
+              </Row>
             </Row>
-          </Row>
-        ) : (
-          <Row className="vw-100 vh-100 p-1 mx-0">
-            <Row className="p-3 mx-0" xs={12}>
-              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
-              <Row
-                  style={{alignItems:"center",height: "5%", backgroundColor: "#FFFFFF" }}
-                >
-                    <Col style={{textAlign:"left"}}>
+          ) : (
+            <Row className="vw-100 vh-100 p-1 mx-0">
+              <Row className="p-3 mx-0" xs={12}>
+                <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                  <Row
+                    className="p-1"
+                    style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                  >
+                    <Col
+                      style={{
+                        height: "100%",
+                        justifyContent: "left",
+                        alignItems: "center",
+                        textAlign: "left",
+                      }}
+                      xs={3}
+                    >
                       <Button
                         size="lg"
                         color="primary"
-                        variant="outline-dark"
-                        
-                      // style={{height: "100%" }}
-                        onClick={() => history.push("/")}
+                        variant="outline-danger"
+                        onClick={async () => {
+                          await onExitButtonEvent();
+                        }}
                       >
-                        <Row className="p3 text-align-center" xs={12}>
-                          <RiArrowGoBackFill />
+                        <Row
+                          className="p-arrow-button text-align-center"
+                          xs={12}
+                        >
+                          <GiExitDoor />
                         </Row>
                       </Button>
                     </Col>
-                </Row>
-              <Row
-                  className="lastmilelogo p-3 mx-0"
-                  style={{ height: "20%", backgroundColor: "#FFFFFF" }}
-                  xs={12}
-                >
-                </Row>
-                <Row
-                  className="p7 p-bold p-1 mx-0 "
-                  style={{ height: "65%", backgroundColor: "#E7E6E1" }}
-                  xs={12}
-                >
-                  <Col
-                    className="p7"
-                    style={{ backgroundColor: "#E7E6E1" }}
-                    xs={6}
+                  </Row>
+                  <Row
+                    className="lastmilelogo p-3 mx-0"
+                    style={{ height: "20%", backgroundColor: "#FFFFFF" }}
+                    xs={12}
+                  ></Row>
+                  <Row
+                    className="p7 p-bold p-1 mx-0 "
+                    style={{ height: "60%", backgroundColor: "#E7E6E1" }}
+                    xs={12}
                   >
-                    <Row
-                      className="p7 text-align-center p-bold p-1 mx-0"
-                      style={{ height: "20%" }}
-                    >
-                      Player
-                    </Row>
-                    <Row
-                      className="p4 text-align-center"
-                      style={{ height: "10%" }}
-                    >
-                      Join an activity with a PIN provided by the host.
-                    </Row>
-                    <Row
-                      className="p text-align-center"
-                      style={{ height: "30%" }}
+                    <Col
+                      className="p7"
+                      style={{ backgroundColor: "#E7E6E1" }}
+                      xs={6}
                     >
                       <Row
-                        className="p text-align-center"
-                        style={{ width: "80%", height: "100%" }}
+                        className="p7 text-align-center p-bold p-1 mx-0"
+                        style={{ height: "20%" }}
                       >
-                        <Form>
-                          <Form.Group>
-                            <Form.Control
-                              size="lg"
-                              placeholder="Game PIN"
-                              variant="outlined"
-                              value={PIN}
-                              type="number"
-                              onKeyPress={(event) => {
-                                if (event.key === "Enter")
-                                  event.preventDefault();
-                                // await JoinSession();
-                              }}
-                              onChange={(event) => setPIN(event.target.value)}
-                            />
-                          </Form.Group>
-                        </Form>
+                        Player
                       </Row>
-                    </Row>
-                    <Row
-                      className="p4 text-align-center"
-                      style={{ height: "20%" }}
-                    >
                       <Row
                         className="p4 text-align-center"
-                        style={{ width: "75%", height: "30%" }}
+                        style={{ height: "10%" }}
+                      >
+                        Join an activity with a PIN provided by the host.
+                      </Row>
+                      <Row
+                        className="p text-align-center"
+                        style={{ height: "30%" }}
+                      >
+                        <Row
+                          className="p text-align-center"
+                          style={{ width: "80%", height: "100%" }}
+                        >
+                          <Form>
+                            <Form.Group>
+                              <Form.Control
+                                size="lg"
+                                placeholder="Game PIN"
+                                variant="outlined"
+                                value={PIN}
+                                type="number"
+                                onKeyPress={(event) => {
+                                  if (event.key === "Enter")
+                                    event.preventDefault();
+                                  // await JoinSession();
+                                }}
+                                onChange={(event) => setPIN(event.target.value)}
+                              />
+                            </Form.Group>
+                          </Form>
+                        </Row>
+                      </Row>
+                      <Row
+                        className="p4 text-align-center"
+                        style={{ height: "20%" }}
+                      >
+                        <Row
+                          className="p4 text-align-center"
+                          style={{ width: "75%", height: "30%" }}
+                        >
+                          <Button
+                            size="lg"
+                            color="primary"
+                            onClick={async () => {
+                              await JoinSession();
+                            }}
+                          >
+                            <Row className="p3 text-align-center" xs={12}>
+                              Join Session
+                            </Row>
+                          </Button>
+                        </Row>
+                      </Row>
+                    </Col>
+                    <Col
+                      className="p7"
+                      style={{ backgroundColor: "#E7E6E1" }}
+                      xs={6}
+                    >
+                      <Row
+                        className="p7 text-align-center p-bold p-1 mx-0"
+                        style={{ height: "20%" }}
+                      >
+                        Host
+                      </Row>
+                      <Row
+                        className="p4 text-align-center"
+                        style={{ height: "10%" }}
+                      >
+                        Host a live game or share a game with remote players.
+                      </Row>
+                      <Row
+                        className="p7 text-align-center"
+                        style={{ height: "50%" }}
                       >
                         <Button
                           size="lg"
                           color="primary"
+                          style={{ width: "75%" }}
                           onClick={async () => {
-                            await JoinSession();
+                            CreateSession();
                           }}
                         >
                           <Row className="p3 text-align-center" xs={12}>
-                            Join Session
+                            Create Session
                           </Row>
                         </Button>
                       </Row>
-                    </Row>
-                  </Col>
-                  <Col
-                    className="p7"
-                    style={{ backgroundColor: "#E7E6E1" }}
-                    xs={6}
-                  >
-                    <Row
-                      className="p7 text-align-center p-bold p-1 mx-0"
-                      style={{ height: "20%" }}
-                    >
-                      Host
-                    </Row>
-                    <Row
-                      className="p4 text-align-center"
-                      style={{ height: "10%" }}
-                    >
-                      Host a live game or share a game with remote players.
-                    </Row>
-                    <Row
-                      className="p7 text-align-center"
-                      style={{ height: "50%" }}
-                    >
-                      <Button
-                        size="lg"
-                        color="primary"
-                        style={{ width: "75%" }}
-                        onClick={async () => {
-                          CreateSession();
-                        }}
-                      >
-                        <Row className="p3 text-align-center" xs={12}>
-                          Create Session
-                        </Row>
-                      </Button>
-                    </Row>
-                    {/* <Row
+                      {/* <Row
                       className="p7 text-align-center"
                       style={{ height: "50%" }}
                     >
@@ -1331,20 +1408,21 @@ export default function Multiplayer() {
                         </Row>
                       </Button>
                     </Row> */}
-                  </Col>
-                </Row>
-                <Row
-                  className="p4 text-align-center p-1 mx-0"
-                  style={{ height: "10%" }}
-                  xs={12}
-                >
-                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
-                </Row>
-              </Col>
+                    </Col>
+                  </Row>
+                  <Row
+                    className="p4 text-align-center p-1 mx-0"
+                    style={{ height: "10%" }}
+                    xs={12}
+                  >
+                    Version {version} | © {new Date().getFullYear()} FRAB5
+                    Thesis.
+                  </Row>
+                </Col>
+              </Row>
             </Row>
-          </Row>
-        )}
-      </div>
+          )}
+        </div>
       </FullScreen>
     );
   } else if (FSMPage === "MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE") {
@@ -1354,28 +1432,161 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="p-1"
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    style={{
+                      height: "100%",
+                      justifyContent: "left",
+                      alignItems: "center",
+                      textAlign: "left",
+                      wordBreak: "break-all",
+                    }}
+                    xs={3}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      variant="outline-danger"
+                      onClick={async () => {
+                        await onExitButtonEvent();
+                      }}
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <GiExitDoor />
+                      </Row>
+                    </Button>
+                  </Col>
+                </Row>
+                <Row
+                  className="p-1"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    className="lastmilelogo ph3 text-align-center"
+                    style={{
+                      height: "100%",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={12}
+                  ></Col>
+                </Row>
+                <Row
+                  className="p7 p-bold p-1 mx-0 "
+                  style={{
+                    justifyContent: "center",
+                    // alignItems: "center",
+                    textAlign: "center",
+                    height: "65%",
+                    backgroundColor: "#E7E6E1",
+                  }}
+                  xs={12}
+                >
+                  <Row
+                    className="ph6 text-align-center p-bold p-1 mx-0"
+                    style={{ height: "15%" }}
+                  >
+                    Player
+                  </Row>
+                  <Row
+                    className="ph3 text-align-center"
+                    style={{ height: "5%" }}
+                  >
+                    Enter your (group) name.
+                  </Row>
+                  <Row
+                    className="ph text-align-center"
+                    style={{ height: "10%" }}
+                  >
+                    <Row
+                      className="ph3 text-align-center"
+                      style={{ width: "80%", height: "100%" }}
+                    >
+                      <Form>
+                        <Form.Group>
+                          <Form.Control
+                            size="md"
+                            placeholder="Enter your (group) name."
+                            variant="outlined"
+                            value={groupPlayerName}
+                            type="text"
+                            onKeyPress={(event) => {
+                              if (event.key === "Enter") event.preventDefault();
+                            }}
+                            onChange={(event) =>
+                              setGroupPlayerName(event.target.value)
+                            }
+                          />
+                        </Form.Group>
+                      </Form>
+                    </Row>
+                  </Row>
+                  <Row
+                    className="ph4 text-align-center"
+                    style={{ width: "75%", height: "10%" }}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      onClick={async () => {
+                        await checkGroupPlayerName();
+                      }}
+                    >
+                      <Row className="ph3 text-align-center" xs={12}>
+                        OK, go!
+                      </Row>
+                    </Button>
+                  </Row>
+                </Row>
+                <Row
+                  className="ph3 text-align-center p-1 mx-0"
+                  style={{ height: "10%" }}
+                  xs={12}
+                >
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
             <Row className="p-3 mx-0" xs={12}>
               <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="p-1"
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    style={{
+                      height: "100%",
+                      justifyContent: "left",
+                      alignItems: "center",
+                      textAlign: "left",
+                    }}
+                    xs={3}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      variant="outline-danger"
+                      onClick={async () => {
+                        await onExitButtonEvent();
+                      }}
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <GiExitDoor />
+                      </Row>
+                    </Button>
+                  </Col>
+                </Row>
                 <Row
                   className="lastmilelogo p-3 mx-0"
                   style={{ height: "20%", backgroundColor: "#FFFFFF" }}
@@ -1383,7 +1594,7 @@ export default function Multiplayer() {
                 ></Row>
                 <Row
                   className="p7 p-bold p-1 mx-0 "
-                  style={{ height: "70%", backgroundColor: "#E7E6E1" }}
+                  style={{ height: "60%", backgroundColor: "#E7E6E1" }}
                   xs={12}
                 >
                   <Col
@@ -1398,7 +1609,7 @@ export default function Multiplayer() {
                       Player
                     </Row>
                     <Row
-                      className="p4 text-align-center"
+                      className="p3 text-align-center"
                       style={{ height: "10%" }}
                     >
                       Enter your (group) name.
@@ -1474,28 +1685,161 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="p-1"
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    style={{
+                      height: "100%",
+                      justifyContent: "left",
+                      alignItems: "center",
+                      textAlign: "left",
+                      wordBreak: "break-all",
+                    }}
+                    xs={3}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      variant="outline-danger"
+                      onClick={async () => {
+                        await onExitButtonEvent();
+                      }}
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <GiExitDoor />
+                      </Row>
+                    </Button>
+                  </Col>
+                </Row>
+                <Row
+                  className="p-1"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    className="lastmilelogo ph3 text-align-center"
+                    style={{
+                      height: "100%",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={12}
+                  ></Col>
+                </Row>
+                <Row
+                  className="p7 p-bold p-1 mx-0 "
+                  style={{
+                    justifyContent: "center",
+                    // alignItems: "center",
+                    textAlign: "center",
+                    height: "65%",
+                    backgroundColor: "#E7E6E1",
+                  }}
+                  xs={12}
+                >
+                  <Row
+                    className="ph6 text-align-center p-bold p-1 mx-0"
+                    style={{ height: "15%" }}
+                  >
+                    Host
+                  </Row>
+                  <Row
+                    className="ph3 text-align-center"
+                    style={{ height: "5%" }}
+                  >
+                    Enter your host room name.
+                  </Row>
+                  <Row
+                    className="ph text-align-center"
+                    style={{ height: "10%" }}
+                  >
+                    <Row
+                      className="ph3 text-align-center"
+                      style={{ width: "80%", height: "100%" }}
+                    >
+                      <Form>
+                        <Form.Group>
+                          <Form.Control
+                            size="md"
+                            placeholder="Enter your host room name."
+                            variant="outlined"
+                            value={roomHostName}
+                            type="text"
+                            onKeyPress={(event) => {
+                              if (event.key === "Enter") event.preventDefault();
+                            }}
+                            onChange={(event) =>
+                              setRoomHostName(event.target.value)
+                            }
+                          />
+                        </Form.Group>
+                      </Form>
+                    </Row>
+                  </Row>
+                  <Row
+                    className="ph4 text-align-center"
+                    style={{ width: "75%", height: "10%" }}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      onClick={async () => {
+                        await checkRoomHostName();
+                      }}
+                    >
+                      <Row className="ph3 text-align-center" xs={12}>
+                        OK, go!
+                      </Row>
+                    </Button>
+                  </Row>
+                </Row>
+                <Row
+                  className="ph3 text-align-center p-1 mx-0"
+                  style={{ height: "10%" }}
+                  xs={12}
+                >
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
             <Row className="p-3 mx-0" xs={12}>
               <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="p-1"
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    style={{
+                      height: "100%",
+                      justifyContent: "left",
+                      alignItems: "center",
+                      textAlign: "left",
+                    }}
+                    xs={3}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      variant="outline-danger"
+                      onClick={async () => {
+                        await onExitButtonEvent();
+                      }}
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <GiExitDoor />
+                      </Row>
+                    </Button>
+                  </Col>
+                </Row>
                 <Row
                   className="lastmilelogo p-3 mx-0"
                   style={{ height: "20%", backgroundColor: "#FFFFFF" }}
@@ -1503,7 +1847,7 @@ export default function Multiplayer() {
                 ></Row>
                 <Row
                   className="p7 p-bold p-1 mx-0 "
-                  style={{ height: "70%", backgroundColor: "#E7E6E1" }}
+                  style={{ height: "60%", backgroundColor: "#E7E6E1" }}
                   xs={12}
                 >
                   <Col
@@ -1591,53 +1935,393 @@ export default function Multiplayer() {
     return (
       <div className="vw-100 vh-100" style={{ backgroundColor: "#F7F6E7" }}>
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
-          </Row>
-        ) : (
           <Row className="vw-100 vh-100 p-1 mx-0 ">
             <Row className="mx-0 ">
-              <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
                 <Row
-                  className="lastmilelogo mx-0"
-                  style={{ height: "20%", backgroundColor: "#FFFFFF" }}
-                ></Row>
-                <Row
-                  className="p4 text-align-center p-1 mx-0"
-                  style={{ height: "20%", backgroundColor: "#FFFFFF" }}
+                  className="p-1"
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
                 >
-                  Multiplayer - Player Mode
-                  <hr />
-                  Pincode:{" "}
-                  <center>
-                    <b>{getPIN}</b>
-                  </center>
+                  <Col
+                    style={{
+                      height: "100%",
+                      justifyContent: "left",
+                      alignItems: "center",
+                      textAlign: "left",
+                    }}
+                    xs={3}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      variant="outline-danger"
+                      onClick={async () => {
+                        await onExitButtonEvent();
+                      }}
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <GiExitDoor />
+                      </Row>
+                    </Button>
+                  </Col>
+                  <Col
+                    className="lastmilelogo ph3 text-align-center"
+                    style={{
+                      height: "100%",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      textAlign: "center",
+                    }}
+                    xs={6}
+                  ></Col>
+                  <Col
+                    style={{
+                      height: "100%",
+                      justifyContent: "right",
+                      alignItems: "center",
+                      textAlign: "right",
+                    }}
+                    xs={3}
+                  >
+                    {isBluetoothConnected ? (
+                      <Button
+                        size="lg"
+                        variant="outline-danger"
+                        // style={{ height: "100%", width: "100%" }}
+                        onClick={async () =>
+                          await disconnectToBluetoothDevice()
+                        }
+                        disabled={
+                          !isBluetoothConnected ||
+                          isDownButtonPressed ||
+                          isRightButtonPressed ||
+                          isLeftButtonPressed ||
+                          isUpButtonPressed ||
+                          isStopButtonPressed ||
+                          isDirectionButtonReleased ||
+                          gameStarted ||
+                          isUserFinished
+                        }
+                      >
+                        <Row
+                          className="p-arrow-button text-align-center"
+                          xs={12}
+                        >
+                          <MdOutlineBluetoothDisabled />
+                        </Row>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="lg"
+                        variant="outline-primary"
+                        // style={{ height: "100%", width: "100%" }}
+                        onClick={async () => await connectToBluetoothDevice()}
+                        disabled={
+                          isBluetoothConnected ||
+                          isDownButtonPressed ||
+                          isRightButtonPressed ||
+                          isLeftButtonPressed ||
+                          isUpButtonPressed ||
+                          isStopButtonPressed ||
+                          isDirectionButtonReleased ||
+                          gameStarted ||
+                          isUserFinished
+                        }
+                      >
+                        <Row
+                          className="p-arrow-button text-align-center"
+                          xs={12}
+                        >
+                          <MdBluetooth />
+                        </Row>
+                      </Button>
+                    )}
+                  </Col>
                 </Row>
                 <Row
-                  className="p text-align-center text-white p-1"
-                  style={{ height: "15%", backgroundColor: "#000000" }}
+                  className=""
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
                 >
-                  <MdOutlineControlCamera />
-                  Driving Directions
+                  <Col
+                    className="ph3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <MdPin />
+                    &nbsp;&nbsp;Pincode
+                  </Col>
+                  <Col
+                    className="ph3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <FaUsers />
+                    &nbsp;&nbsp;Group&nbsp;Name
+                  </Col>
+                </Row>
+
+                <Row
+                  className=""
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    height: "8%",
+                  }}
+                >
+                  <Col
+                    className="ph7 text-align-center text-wrap border border-dark"
+                    style={{
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                      height: "100%",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>{getPIN}</Row>
+                  </Col>
+
+                  <Col
+                    className="ph7 text-align-center border border-dark"
+                    style={{
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                      height: "100%",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>{groupPlayerName}</Row>
+                  </Col>
+                </Row>
+                <Row
+                  className=""
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    className="ph3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <SiStatuspal />
+                    &nbsp;&nbsp;Status&nbsp;Connection
+                  </Col>
+                  <Col
+                    className="ph3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <SiProbot />
+                    &nbsp;&nbsp;Robot Name
+                  </Col>
+                </Row>
+
+                <Row
+                  className=""
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    height: "8%",
+                  }}
+                >
+                  {isBluetoothConnected ? (
+                    <Col
+                      className="ph7 text-align-center text-white border border-dark"
+                      style={{
+                        backgroundColor: "#008000",
+                        height: "100%",
+                        textAlign: "center",
+                        wordBreak: "break-all",
+                      }}
+                      xs={6}
+                    >
+                      <Row xs={12}>Connected</Row>
+                    </Col>
+                  ) : (
+                    <Col
+                      className="ph7 text-align-center text-white border border-dark"
+                      style={{
+                        backgroundColor: "#FF0000",
+                        height: "100%",
+                        textAlign: "center",
+                        wordBreak: "break-all",
+                      }}
+                      xs={6}
+                    >
+                      <Row xs={12}>Disconnected</Row>
+                    </Col>
+                  )}
+
+                  <Col
+                    className="ph7 text-align-center border border-dark"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>{bluetoothDeviceName}</Row>
+                  </Col>
+                </Row>
+                <Row
+                  className=""
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    className="ph3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <RiPinDistanceFill />
+                    &nbsp;&nbsp;Distance
+                  </Col>
+                  <Col
+                    className="ph3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <MdOutlineTimer />
+                    &nbsp;&nbsp;Time
+                  </Col>
+                </Row>
+                <Row
+                  className="p4 text-align-center"
+                  style={{ height: "8%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    className="ph7 text-align-center border border-dark"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>{distanceEncoderSensorValue}&nbsp;&nbsp;m</Row>
+                  </Col>
+                  <Col
+                    className="ph7 text-align-center border border-dark"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>
+                      {stopwatchElapsedTime.hoursElapsedTime} :{" "}
+                      {stopwatchElapsedTime.minutesElapsedTime < 10
+                        ? "0" + stopwatchElapsedTime.minutesElapsedTime
+                        : stopwatchElapsedTime.minutesElapsedTime}{" "}
+                      :{" "}
+                      {stopwatchElapsedTime.secondsElapsedTime < 10
+                        ? "0" + stopwatchElapsedTime.secondsElapsedTime
+                        : stopwatchElapsedTime.secondsElapsedTime}
+                    </Row>
+                  </Col>
+                </Row>
+                <Row
+                  className=""
+                  style={{
+                    alignItems: "center",
+
+                    backgroundColor: "#FFFFFF",
+                    height: "10%",
+                  }}
+                >
+                  <Col
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "flex-start",
+                    }}
+                    xs={6}
+                  ></Col>
+                  <Col
+                    style={{
+                      display: "flex",
+                      justifyContent: "right",
+                      alignItems: "flex-start",
+                    }}
+                    xs={6}
+                  >
+                    <Button
+                      size="lg"
+                      variant="danger"
+                      style={{ height: "100%", width: "100%" }}
+                      onClick={async () => setIsUserFinished(true)}
+                      disabled={
+                        !isBluetoothConnected ||
+                        isDownButtonPressed ||
+                        isRightButtonPressed ||
+                        isLeftButtonPressed ||
+                        isUpButtonPressed ||
+                        isStopButtonPressed ||
+                        isDirectionButtonReleased ||
+                        !gameStarted ||
+                        isUserFinished
+                      }
+                    >
+                      <Row className="ph3 text-align-center" xs={12}>
+                        Finish Mission
+                      </Row>
+                    </Button>
+                  </Col>
+                </Row>
+                <Row
+                  className="ph7 text-align-center text-white p-1"
+                  style={{
+                    height: "6%",
+                    backgroundColor: "#000000",
+                    textAlign: "center",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  <Col
+                    className="ph7 text-align-center text-white"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={12}
+                  >
+                    <MdOutlineControlCamera />
+                    &nbsp;&nbsp;Driving&nbsp;Directions
+                  </Col>
                 </Row>
                 <Row
                   className="p5 text-align-center border border-dark"
-                  style={{ height: "45%", backgroundColor: "#FFF8F0" }}
+                  style={{ height: "35%", backgroundColor: "#FFFFFF" }}
                 >
                   <div
                     style={{ display: "block", height: "99%", width: "100%" }}
@@ -1691,7 +2375,8 @@ export default function Multiplayer() {
                               isLeftButtonPressed ||
                               isStopButtonPressed ||
                               isDirectionButtonReleased ||
-                              !gameStarted
+                              !gameStarted ||
+                              isUserFinished
                             }
                           >
                             <Row
@@ -1755,7 +2440,8 @@ export default function Multiplayer() {
                               isUpButtonPressed ||
                               isStopButtonPressed ||
                               isDirectionButtonReleased ||
-                              !gameStarted
+                              !gameStarted ||
+                              isUserFinished
                             }
                           >
                             <Row
@@ -1773,7 +2459,7 @@ export default function Multiplayer() {
                         // }}
                         xs={4}
                       >
-                        <Row className="text-align-center" xs={12}>
+                        {/* <Row className="text-align-center" xs={12}>
                           <Button
                             variant="primary"
                             size="lg"
@@ -1807,7 +2493,7 @@ export default function Multiplayer() {
                               isUpButtonPressed ||
                               isLeftButtonPressed ||
                               isDirectionButtonReleased ||
-                              !gameStarted
+                          !gameStarted  || isUserFinished
                             }
                           >
                             <Row
@@ -1817,7 +2503,7 @@ export default function Multiplayer() {
                               <GiStopSign />
                             </Row>
                           </Button>
-                        </Row>
+                        </Row> */}
                       </Col>
                       <Col
                         // style={{
@@ -1859,7 +2545,401 @@ export default function Multiplayer() {
                               isUpButtonPressed ||
                               isLeftButtonPressed ||
                               isDirectionButtonReleased ||
-                              !gameStarted
+                              !gameStarted ||
+                              isUserFinished
+                            }
+                          >
+                            <Row
+                              className="p-arrow-button text-align-center"
+                              xs={12}
+                            >
+                              <ImArrowRight />
+                            </Row>
+                          </Button>
+                        </Row>
+                      </Col>
+                    </Row>
+                    <Row
+                      xs={3}
+                      style={{ height: "33%" }}
+                      className="text-align-center"
+                    >
+                      <Col
+                        className="ph"
+                        style={{
+                          display: "flex",
+                          justifyContent: "left",
+                          alignItems: "flex-end",
+                          height: "100%",
+                          wordBreak: "break-all",
+                        }}
+                        xs={4}
+                      >
+                        Multiplayer
+                        <br />
+                        Mode
+                      </Col>
+                      <Col
+                        // style={{
+                        //   backgroundColor: "yellow",
+                        // }}
+                        xs={4}
+                      >
+                        <Row className="text-align-center" xs={12}>
+                          <Button
+                            variant="primary"
+                            size="lg"
+                            style={{ height: "95%", width: "95%" }}
+                            onMouseDown={async () => {
+                              setIsDownButtonPressed(true);
+                              await sendCommand(backwardCommand);
+                            }}
+                            onMouseUp={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsDownButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            onTouchStart={async () => {
+                              setIsDownButtonPressed(true);
+                              await sendCommand(backwardCommand);
+                            }}
+                            onTouchEnd={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsDownButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            disabled={
+                              !isBluetoothConnected ||
+                              isRightButtonPressed ||
+                              isStopButtonPressed ||
+                              isUpButtonPressed ||
+                              isLeftButtonPressed ||
+                              isDirectionButtonReleased ||
+                              !gameStarted ||
+                              isUserFinished
+                            }
+                          >
+                            <Row
+                              className="p-arrow-button text-align-center"
+                              xs={12}
+                            >
+                              <ImArrowDown />
+                            </Row>
+                          </Button>
+                        </Row>
+                      </Col>
+
+                      <Col
+                        className="ph3"
+                        style={{
+                          display: "flex",
+                          justifyContent: "right",
+                          alignItems: "flex-end",
+                          height: "100%",
+                          wordBreak: "break-all",
+                        }}
+                        xs={4}
+                      >
+                        V{version}
+                      </Col>
+                    </Row>
+                  </div>
+                </Row>
+              </Col>
+            </Row>
+          </Row>
+        ) : (
+          <Row className="vw-100 vh-100 p-1 mx-0 ">
+            <Row className="p-1 mx-0">
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={4}>
+                <Row
+                  style={{
+                    alignItems: "center",
+                    height: "10%",
+                    backgroundColor: "#FFFFFF",
+                  }}
+                >
+                  <Col
+                    style={{
+                      height: "100%",
+                      textAlign: "left",
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      variant="outline-danger"
+                      onClick={async () => {
+                        // await sendCommand(restartCommand);
+                        await onExitButtonEvent();
+                      }}
+                      style={{ height: "100%", width: "25%" }}
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <GiExitDoor />
+                      </Row>
+                    </Button>
+                  </Col>
+                </Row>
+                <Row
+                  className="lastmilelogo mx-0"
+                  style={{ height: "20%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="p3 text-align-center p-1 mx-0"
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                >
+                  Multiplayer&nbsp;Mode
+                </Row>
+                <Row
+                  className="p text-align-center text-white p-1 text-white border border-white"
+                  style={{ height: "10%", backgroundColor: "#000000" }}
+                >
+                  <Col
+                    className="p3 text-align-center text-white"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={12}
+                  >
+                    <MdOutlineControlCamera />
+                    &nbsp;&nbsp;Driving&nbsp;Directions
+                  </Col>
+                </Row>
+                <Row
+                  className="p5 text-align-center border border-dark"
+                  style={{ height: "50%", backgroundColor: "#FFFFFF" }}
+                >
+                  <div
+                    style={{ display: "block", height: "99%", width: "100%" }}
+                  >
+                    <Row
+                      xs={3}
+                      style={{ height: "33%" }}
+                      className="text-align-center"
+                    >
+                      <Col
+                        // style={{
+                        //   backgroundColor: "red",
+                        // }}
+                        xs={4}
+                      ></Col>
+                      <Col
+                        // style={{ backgroundColor: "yellow" }}
+                        xs={4}
+                      >
+                        <Row className="text-align-center" xs={12}>
+                          <Button
+                            variant="primary"
+                            size="lg"
+                            style={{ height: "95%", width: "95%" }}
+                            onMouseDown={async () => {
+                              setIsUpButtonPressed(true);
+                              await sendCommand(forwardCommand);
+                            }}
+                            onMouseUp={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsUpButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            onTouchStart={async () => {
+                              setIsUpButtonPressed(true);
+                              await sendCommand(forwardCommand);
+                            }}
+                            onTouchEnd={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsUpButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            disabled={
+                              !isBluetoothConnected ||
+                              isDownButtonPressed ||
+                              isRightButtonPressed ||
+                              isLeftButtonPressed ||
+                              isStopButtonPressed ||
+                              isDirectionButtonReleased ||
+                              !gameStarted ||
+                              isUserFinished
+                            }
+                          >
+                            <Row
+                              className="p-arrow-button text-align-center"
+                              xs={12}
+                            >
+                              <ImArrowUp />
+                            </Row>
+                          </Button>
+                        </Row>
+                      </Col>
+                      <Col
+                        // style={{
+                        //   backgroundColor: "green",
+                        // }}
+                        xs={4}
+                      ></Col>
+                    </Row>
+                    <Row
+                      xs={3}
+                      style={{ height: "33%" }}
+                      className="text-align-center"
+                    >
+                      <Col
+                        // style={{
+                        //   backgroundColor: "red",
+                        // }}
+                        xs={4}
+                      >
+                        <Row className="text-align-center" xs={12}>
+                          <Button
+                            variant="primary"
+                            size="lg"
+                            style={{ height: "95%", width: "95%" }}
+                            onMouseDown={async () => {
+                              setIsLeftButtonPressed(true);
+                              await sendCommand(spinLeftCommand);
+                            }}
+                            onMouseUp={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsLeftButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            onTouchStart={async () => {
+                              setIsLeftButtonPressed(true);
+                              await sendCommand(spinLeftCommand);
+                            }}
+                            onTouchEnd={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsLeftButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            disabled={
+                              !isBluetoothConnected ||
+                              isDownButtonPressed ||
+                              isRightButtonPressed ||
+                              isUpButtonPressed ||
+                              isStopButtonPressed ||
+                              isDirectionButtonReleased ||
+                              !gameStarted ||
+                              isUserFinished
+                            }
+                          >
+                            <Row
+                              className="p-arrow-button text-align-center"
+                              xs={12}
+                            >
+                              <ImArrowLeft />
+                            </Row>
+                          </Button>
+                        </Row>
+                      </Col>
+                      <Col
+                        // style={{
+                        //   backgroundColor: "yellow",
+                        // }}
+                        xs={4}
+                      >
+                        {/* <Row className="text-align-center" xs={12}>
+                          <Button
+                            variant="primary"
+                            size="lg"
+                            style={{ height: "95%", width: "95%" }}
+                            onMouseDown={async () => {
+                              setIsStopButtonPressed(true);
+                              await sendCommand(stopCommand);
+                            }}
+                            onMouseUp={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsStopButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            onTouchStart={async () => {
+                              setIsStopButtonPressed(true);
+                              await sendCommand(stopCommand);
+                            }}
+                            onTouchEnd={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsStopButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            disabled={
+                              !isBluetoothConnected ||
+                              isDownButtonPressed ||
+                              isRightButtonPressed ||
+                              isUpButtonPressed ||
+                              isLeftButtonPressed ||
+                              isDirectionButtonReleased
+                            }
+                          >
+                            <Row
+                              className="p-arrow-button text-align-center"
+                              xs={12}
+                            >
+                              <GiStopSign />
+                            </Row>
+                          </Button>
+                        </Row> */}
+                      </Col>
+                      <Col
+                        // style={{
+                        //   backgroundColor: "green",
+                        // }}
+                        xs={4}
+                      >
+                        <Row className="text-align-center" xs={12}>
+                          <Button
+                            variant="primary"
+                            size="lg"
+                            style={{ height: "95%", width: "95%" }}
+                            onMouseDown={async () => {
+                              setIsRightButtonPressed(true);
+                              await sendCommand(spinRightCommand);
+                            }}
+                            onMouseUp={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsRightButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            onTouchStart={async () => {
+                              setIsRightButtonPressed(true);
+                              await sendCommand(spinRightCommand);
+                            }}
+                            onTouchEnd={async () => {
+                              setIsDirectionButtonReleased(true);
+                              await sleep(stability_delay);
+                              await sendCommand(stopCommand);
+                              setIsRightButtonPressed(false);
+                              setIsDirectionButtonReleased(false);
+                            }}
+                            disabled={
+                              !isBluetoothConnected ||
+                              isDownButtonPressed ||
+                              isStopButtonPressed ||
+                              isUpButtonPressed ||
+                              isLeftButtonPressed ||
+                              isDirectionButtonReleased ||
+                              !gameStarted ||
+                              isUserFinished
                             }
                           >
                             <Row
@@ -1923,7 +3003,8 @@ export default function Multiplayer() {
                               isUpButtonPressed ||
                               isLeftButtonPressed ||
                               isDirectionButtonReleased ||
-                              !gameStarted
+                              !gameStarted ||
+                              isUserFinished
                             }
                           >
                             <Row
@@ -1945,187 +3026,425 @@ export default function Multiplayer() {
                   </div>
                 </Row>
               </Col>
-              <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
-                {/*<Row
-                  className="p text-align-center text-white p-1 mx-0"
-                  style={{ height: "15%", backgroundColor: "#000000" }}
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={6}>
+                <Row
+                  className="p-1"
+                  style={{
+                    alignItems: "flex-start",
+                    backgroundColor: "#FFFFFF",
+                    height: "12%",
+                  }}
                 >
-                  <FaWeight />
-                  Weight (g.)
+                  <Col
+                    className="p3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  ></Col>
+                  <Col
+                    className="p3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={3}
+                  >
+                    Pincode
+                  </Col>
+                  <Col
+                    className="p3 text-align-center border border-dark"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={3}
+                  >
+                    {getPIN}
+                  </Col>
                 </Row>
                 <Row
-                  className="p6 text-align-center p-1 mx-0 border border-dark"
-                  style={{ height: "35%", backgroundColor: "#FFF8F0" }}
+                  className="p-1"
+                  style={{
+                    alignItems: "flex-start",
+                    backgroundColor: "#FFFFFF",
+                    height: "10%",
+                  }}
                 >
-                  {weightSensorValue}
-                  {/* 12345678.9 
-                </Row>*/}
+                  <Col
+                    className="p3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <FaUsers />
+                    &nbsp;&nbsp;Group&nbsp;Name
+                  </Col>
+                  <Col
+                    className="p3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <SiProbot />
+                    &nbsp;&nbsp;Robot&nbsp;Name
+                  </Col>
+                </Row>
+                <Row
+                  className="p-1"
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    height: "15%",
+                  }}
+                >
+                  <Col
+                    className="p3 text-align-center border border-dark"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>{groupPlayerName}</Row>
+                  </Col>
+                  <Col
+                    className="p3 text-align-center border border-dark"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>{bluetoothDeviceName}</Row>
+                  </Col>
+                </Row>
+                <Row
+                  className="p-1"
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    height: "3%",
+                  }}
+                />
+                <Row
+                  className="p-1"
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    height: "10%",
+                  }}
+                >
+                  <Col
+                    className="p3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                    }}
+                    xs={6}
+                  >
+                    <RiPinDistanceFill />
+                    &nbsp;&nbsp;Distance
+                  </Col>
 
-                <Row
-                  className="p text-align-center text-white p-1 mx-0"
-                  style={{ height: "15%", backgroundColor: "#000000" }}
-                >
-                  <FaUsers />
-                  Group Name
+                  <Col
+                    className="p3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <MdOutlineTimer />
+                    &nbsp;&nbsp;Time
+                  </Col>
                 </Row>
                 <Row
-                  className="p3 text-align-center p-1 mx-0 border border-dark"
-                  style={{ height: "35%", backgroundColor: "#FFF8F0" }}
+                  className="p-1"
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    height: "25%",
+                  }}
                 >
-                  {groupPlayerName}
+                  <Col
+                    className="p7 text-align-center border border-dark"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>{distanceEncoderSensorValue}&nbsp;&nbsp;m</Row>
+                  </Col>
+
+                  <Col
+                    className="p7 text-align-center border border-dark"
+                    style={{
+                      height: "100%",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                    }}
+                    xs={6}
+                  >
+                    <Row xs={12}>
+                      {" "}
+                      {stopwatchElapsedTime.hoursElapsedTime} :{" "}
+                      {stopwatchElapsedTime.minutesElapsedTime < 10
+                        ? "0" + stopwatchElapsedTime.minutesElapsedTime
+                        : stopwatchElapsedTime.minutesElapsedTime}{" "}
+                      :{" "}
+                      {stopwatchElapsedTime.secondsElapsedTime < 10
+                        ? "0" + stopwatchElapsedTime.secondsElapsedTime
+                        : stopwatchElapsedTime.secondsElapsedTime}
+                    </Row>
+                  </Col>
                 </Row>
                 <Row
-                  className="p text-align-center text-white p-1 mx-0"
-                  style={{ height: "15%", backgroundColor: "#000000" }}
-                >
-                  <SiProbot />
-                  Robot Name
-                </Row>
+                  className=""
+                  style={{
+                    alignItems: "center",
+
+                    backgroundColor: "#FFFFFF",
+                    height: "2%",
+                  }}
+                ></Row>
                 <Row
-                  className="p3 text-align-center p-1 mx-0 border border-dark"
-                  style={{ height: "35%", backgroundColor: "#FFF8F0" }}
+                  className=""
+                  style={{
+                    alignItems: "center",
+
+                    backgroundColor: "#FFFFFF",
+                    height: "10%",
+                  }}
                 >
-                  {bluetoothDeviceName}
-                </Row>
-              </Col>
-              <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
-                <Row
-                  className="p text-align-center text-white p-1 mx-0"
-                  style={{ height: "15%", backgroundColor: "#000000" }}
-                >
-                  <RiPinDistanceFill />
-                  Distance (cm.)
-                </Row>
-                <Row
-                  className="p6 text-align-center p-1 mx-0 border border-dark"
-                  style={{ height: "85%", backgroundColor: "#FFF8F0" }}
-                >
-                  {distanceEncoderSensorValue}
-                  {/* 12345678.9 */}
-                </Row>
-              </Col>
-              <Col style={{ backgroundColor: "#FFFFFF" }} xs={3}>
-                <Row
-                  className="p text-align-center text-white p-1 mx-0"
-                  style={{ height: "15%", backgroundColor: "#000000" }}
-                >
-                  <MdOutlineTimer />
-                  Stopwatch Timer
-                </Row>
-                <Row
-                  className="p6 text-align-center p-1 mx-0 border border-dark"
-                  style={{ height: "15%", backgroundColor: "#FFF8F0" }}
-                >
-                  {" "}
-                  {stopwatchElapsedTime.hoursElapsedTime} :{" "}
-                  {stopwatchElapsedTime.minutesElapsedTime < 10
-                    ? "0" + stopwatchElapsedTime.minutesElapsedTime
-                    : stopwatchElapsedTime.minutesElapsedTime}{" "}
-                  :{" "}
-                  {stopwatchElapsedTime.secondsElapsedTime < 10
-                    ? "0" + stopwatchElapsedTime.secondsElapsedTime
-                    : stopwatchElapsedTime.secondsElapsedTime}
-                </Row>
-                <Row
-                  className="p text-align-center text-white p-1 mx-0"
-                  style={{ height: "15%", backgroundColor: "#000000" }}
-                >
-                  <FaLink />
-                  Connectivity
-                </Row>
-                <Row
-                  className="p2 text-align-center p-1 mx-0 border border-dark"
-                  style={{ height: "25%", backgroundColor: "#FFF8F0" }}
-                >
-                  <Row
-                    className="p2 text-align-center p-1 mx-0"
-                    style={{ height: "50%", backgroundColor: "#FFF8F0" }}
+                  <Col
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "flex-start",
+                    }}
+                    xs={6}
+                  ></Col>
+                  <Col
+                    style={{
+                      display: "flex",
+                      justifyContent: "right",
+                      alignItems: "flex-start",
+                    }}
+                    xs={6}
                   >
                     <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={async () => await connectToBluetoothDevice()}
-                      disabled={
-                        isBluetoothConnected ||
-                        // isDownButtonPressed ||
-                        // isRightButtonPressed ||
-                        // isLeftButtonPressed ||
-                        // isUpButtonPressed ||
-                        // isStopButtonPressed ||
-                        // isDirectionButtonReleased ||
-                        gameStarted
-                      }
-                    >
-                      <Row className="p text-align-center">
-                        <MdBluetooth />
-                        Connect
-                      </Row>
-                    </Button>
-                  </Row>
-                  <Row
-                    className="p2 text-align-center p-1 mx-0"
-                    style={{ height: "50%", backgroundColor: "#FFF8F0" }}
-                  >
-                    <Button
+                      size="lg"
                       variant="danger"
-                      size="sm"
-                      onClick={async () => await disconnectToBluetoothDevice()}
+                      style={{ height: "100%", width: "100%" }}
+                      onClick={async () => setIsUserFinished(true)}
                       disabled={
                         !isBluetoothConnected ||
-                        // isDownButtonPressed ||
-                        // isRightButtonPressed ||
-                        // isLeftButtonPressed ||
-                        // isUpButtonPressed ||
-                        // isStopButtonPressed ||
-                        // isDirectionButtonReleased ||
-                        gameStarted
+                        isDownButtonPressed ||
+                        isRightButtonPressed ||
+                        isLeftButtonPressed ||
+                        isUpButtonPressed ||
+                        isStopButtonPressed ||
+                        isDirectionButtonReleased ||
+                        !gameStarted ||
+                        isUserFinished
                       }
                     >
-                      <Row className="p text-align-center">
-                        <MdOutlineBluetoothDisabled />
-                        Disconnect
+                      <Row className="p3 text-align-center" xs={12}>
+                        Finish Mission
                       </Row>
                     </Button>
-                  </Row>
+                  </Col>
                 </Row>
+              </Col>
+
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={2}>
                 <Row
-                  className="p text-align-center text-white p-1 mx-0"
-                  style={{ height: "15%", backgroundColor: "#000000" }}
+                  className="p-1"
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    height: "12%",
+                  }}
                 >
-                  <AiOutlineMenu />
-                  Menu
-                </Row>
-                <Row
-                  className="p text-align-center p-1 mx-0 border border-dark"
-                  style={{ height: "15%", backgroundColor: "#FFF8F0" }}
-                >
-                  <Row
-                    className="p2 text-align-center p-1 mx-0"
-                    style={{ height: "100%", backgroundColor: "#FFF8F0" }}
+                  <Col
+                    className="p3 text-align-center text-white border border-dark"
+                    style={{
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                      height: "100%",
+                    }}
+                    xs={6}
                   >
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={async () => {
-                        // await sendCommand(restartCommand);
-                        await onExituttonEvent();
+                    <Row xs={12}>Status</Row>
+                  </Col>
+
+                  {isBluetoothConnected ? (
+                    <Col
+                      className="p3 text-align-center text-white border border-dark"
+                      style={{
+                        backgroundColor: "#008000",
+                        height: "100%",
+                        textAlign: "center",
+                        wordBreak: "break-all",
                       }}
-                      disabled={
-                        // isDownButtonPressed ||
-                        // isRightButtonPressed ||
-                        // isLeftButtonPressed ||
-                        // isUpButtonPressed ||
-                        // isStopButtonPressed ||
-                        // isDirectionButtonReleased ||
-                        gameStarted
-                      }
-                    >
-                      <Row className="p text-align-center">
-                        <GiExitDoor />
-                        Exit Game
-                      </Row>
-                    </Button>
-                  </Row>
+                      xs={6}
+                    />
+                  ) : (
+                    <Col
+                      className="p3 text-align-center text-white border border-dark"
+                      style={{
+                        backgroundColor: "#FF0000",
+                        height: "100%",
+                        textAlign: "center",
+                        wordBreak: "break-all",
+                      }}
+                      xs={6}
+                    />
+                  )}
+                </Row>
+                <Row
+                  className="p-1"
+                  style={{
+                    alignItems: "flex-start",
+                    backgroundColor: "#FFFFFF",
+                    height: "10%",
+                  }}
+                >
+                  <Col
+                    className="p3 text-align-center text-white border border-white"
+                    style={{
+                      height: "100%",
+                      backgroundColor: "#000000",
+                      textAlign: "center",
+                    }}
+                    xs={12}
+                  >
+                    Connection
+                  </Col>
+                </Row>
+                <Row
+                  className=""
+                  style={{
+                    alignItems: "center",
+
+                    backgroundColor: "#FFFFFF",
+                    height: "10%",
+                  }}
+                >
+                  <Col
+                    style={{
+                      display: "flex",
+                      justifyContent: "right",
+                      alignItems: "flex-start",
+                    }}
+                    xs={12}
+                  >
+                    {isBluetoothConnected ? (
+                      <Button
+                        size="lg"
+                        variant="outline-danger"
+                        style={{ height: "100%", width: "100%" }}
+                        onClick={async () =>
+                          await disconnectToBluetoothDevice()
+                        }
+                        disabled={
+                          !isBluetoothConnected ||
+                          isDownButtonPressed ||
+                          isRightButtonPressed ||
+                          isLeftButtonPressed ||
+                          isUpButtonPressed ||
+                          isStopButtonPressed ||
+                          isDirectionButtonReleased ||
+                          gameStarted ||
+                          isUserFinished
+                        }
+                      >
+                        <Row
+                          className="p-arrow-button text-align-center"
+                          xs={12}
+                        >
+                          <MdOutlineBluetoothDisabled />
+                        </Row>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="lg"
+                        variant="outline-primary"
+                        style={{ height: "100%", width: "100%" }}
+                        onClick={async () => await connectToBluetoothDevice()}
+                        disabled={
+                          isBluetoothConnected ||
+                          isDownButtonPressed ||
+                          isRightButtonPressed ||
+                          isLeftButtonPressed ||
+                          isUpButtonPressed ||
+                          isStopButtonPressed ||
+                          isDirectionButtonReleased ||
+                          gameStarted ||
+                          isUserFinished
+                        }
+                      >
+                        <Row
+                          className="p-arrow-button text-align-center"
+                          xs={12}
+                        >
+                          <MdBluetooth />
+                        </Row>
+                      </Button>
+                    )}
+                  </Col>
+                </Row>
+
+                <Row
+                  className="p-0 mx-0"
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    height: "60%",
+                  }}
+                ></Row>
+                <Row
+                  className="p-0 mx-0"
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    height: "5%",
+                  }}
+                >
+                  <Col
+                    className="p"
+                    style={{
+                      display: "flex",
+                      justifyContent: "right",
+                      alignItems: "flex-end",
+                      height: "100%",
+                    }}
+                    xs={12}
+                  >
+                    <Row xs={12}>V{version}</Row>
+                  </Col>
                 </Row>
               </Col>
             </Row>
@@ -2136,7 +3455,7 @@ export default function Multiplayer() {
   } else if (FSMPage === "MULTIPLAYER_MODE_HOST_CONTROLPANEL_PAGE") {
     return (
       <div className="vw-100 vh-100" style={{ backgroundColor: "#F7F6E7" }}>
-        {isPortrait ? (
+        {/* {isPortrait ? (
           <Row className="vw-100 vh-100 mx-0 ">
             <Col style={{ backgroundColor: "#FFFFFF" }}>
               <Row
@@ -2155,208 +3474,261 @@ export default function Multiplayer() {
               ></Row>
             </Col>
           </Row>
-        ) : (
-          <Row className="vw-100 vh-100 p-1 mx-0 ">
-            <Row
-              className="p-1 mx-0 "
-              style={{ height: "25%", backgroundColor: "#FFFFFF" }}
-            >
-              <Col xs={3}>
-                <Row
-                  className="p p-1 mx-0 text-white text-align-center"
-                  style={{ height: "40%", backgroundColor: "#000000" }}
-                >
-                  <MdPin />
-                  Pincode
-                </Row>
-
-                <Row
-                  className="p7 p-1 mx-0 border border-dark text-align-center"
-                  style={{ height: "60%", backgroundColor: "#FFFFFF" }}
-                >
-                  {getPIN}
-                </Row>
-              </Col>
-              <Col xs={3}>
-                <Row
-                  className="p p-1 mx-0 text-white text-align-center"
-                  style={{ height: "40%", backgroundColor: "#000000" }}
-                >
-                  <MdOutlineTimer />
-                  Stopwatch Timer
-                </Row>
-
-                <Row
-                  className="p7 p-1 mx-0 border border-dark text-align-center"
-                  style={{ height: "60%", backgroundColor: "#FFFFFF" }}
-                >
-                  {stopwatchElapsedTime.hoursElapsedTime} :{" "}
-                  {stopwatchElapsedTime.minutesElapsedTime < 10
-                    ? "0" + stopwatchElapsedTime.minutesElapsedTime
-                    : stopwatchElapsedTime.minutesElapsedTime}{" "}
-                  :{" "}
-                  {stopwatchElapsedTime.secondsElapsedTime < 10
-                    ? "0" + stopwatchElapsedTime.secondsElapsedTime
-                    : stopwatchElapsedTime.secondsElapsedTime}
-                </Row>
-              </Col>
-              <Col xs={6}>
-                <Row
-                  className="p p-1 mx-0 text-white text-align-center"
-                  style={{ height: "40%", backgroundColor: "#000000" }}
-                >
-                  <AiOutlineMenu />
-                  Menu
-                </Row>
-                <Row
-                  className="p-1 mx-0 border border-dark"
-                  style={{ height: "60%", backgroundColor: "#FFFFFF" }}
-                >
-                  <Col xs={3}>
-                    <Row
-                      className="p-1 mx-0"
-                      style={{ height: "100%", backgroundColor: "#FFFFFF" }}
-                    >
-                      <Button
-                        onClick={() => {
-                          if (getInClassRoom) {
-                            db.ref("gameSessions/" + getPIN).update({
-                              gameAlreadyStarted: true,
-                              gameStarted: true,
-                              timeIsActived: true,
-                              timeIsPaused: false,
-                            });
-                          }
-                          startStopwatch();
-                        }}
-                        disabled={timeIsActive && timeIsPaused}
-                      >
-                        <Row className="p3 text-align-center" xs={12}>
-                          Start
-                        </Row>
-                      </Button>
-                    </Row>
-                  </Col>
-                  <Col xs={3}>
-                    <Row
-                      className="p-1 mx-0"
-                      style={{ height: "100%", backgroundColor: "#FFFFFF" }}
-                    >
-                      <Button
-                        onClick={() => {
-                          if (getInClassRoom) {
-                            db.ref("gameSessions/" + getPIN).update({
-                              gameAlreadyStarted: true,
-                              gameStarted: true,
-                              timeIsActived: false,
-                              timeIsPaused: true,
-                            });
-                          }
-                          stopStopwatch();
-                        }}
-                        disabled={!(timeIsActive && timeIsPaused)}
-                      >
-                        <Row className="p3 text-align-center" xs={12}>
-                          Stop
-                        </Row>
-                      </Button>
-                    </Row>
-                  </Col>
-                  <Col xs={3}>
-                    <Row
-                      className="p-1 mx-0"
-                      style={{ height: "100%", backgroundColor: "#FFFFFF" }}
-                    >
-                      <Button
-                        onClick={() => {
-                          if (getInClassRoom) {
-                            db.ref("gameSessions/" + getPIN).update({
-                              gameAlreadyStarted: true,
-                              gameStarted: false,
-                              timeIsActived: false,
-                              timeIsPaused: false,
-                            });
-                          }
-                          resetStopwatch();
-                        }}
-                        disabled={!(timeIsActive || timeIsPaused)}
-                      >
-                        <Row className="p3 text-align-center" xs={12}>
-                          Reset
-                        </Row>
-                      </Button>
-                    </Row>
-                  </Col>
-                  <Col xs={3}>
-                    <Row
-                      className="p-1 mx-0"
-                      style={{ height: "100%", backgroundColor: "#FFFFFF" }}
-                    >
-                      <Button
-                        variant="danger"
-                        onClick={async () => {
-                          onExituttonEvent();
-                        }}
-                      >
-                        <Row className="p3 text-align-center" xs={12}>
-                          Exit
-                        </Row>
-                      </Button>
-                    </Row>
-                  </Col>
-                </Row>
-              </Col>
-            </Row>
-
-            <Row className="mx-0" style={{ height: "10%" }}>
-              <Col
-                xs={2}
-                className="p text-white text-align-center"
-                style={{ backgroundColor: "#000000" }}
+        ) : ( */}
+        <Row className="vw-100 vh-100 p-1 mx-0 ">
+          <Row
+            className="p-1 mx-0 "
+            style={{ height: "25%", backgroundColor: "#FFFFFF" }}
+          >
+            <Col xs={3}>
+              <Row
+                className="p p-1 mx-0 text-white text-align-center"
+                style={{ height: "40%", backgroundColor: "#000000" }}
               >
-                Leaderboard
-              </Col>
+                <MdPin />
+                Pincode
+              </Row>
 
-              <Col
-                xs={10}
-                className="p text-align-center border border-dark"
-                style={{ backgroundColor: "#FFFFFF" }}
+              <Row
+                className="p7 p-1 mx-0 border border-dark text-align-center"
+                style={{ height: "60%", backgroundColor: "#FFFFFF" }}
               >
-                {roomHostName}
-              </Col>
-            </Row>
-            <Row
-              className="p-1 mx-0  border border-dark"
-              style={{ height: "65%", backgroundColor: "#D3DEDC" }}
-            >
-              <MaterialTable
-                icons={tableIcons}
-                title={roomHostName + "'s Players Detail"}
-                columns={[
-                  { title: "Group Name", field: "groupName" },
-                  { title: "Robot Name", field: "deviceName" },
-                  // {
-                  //   title: "Weight (kg.)",
-                  //   field: "weightSensorValue",
-                  //   type: "numeric",
-                  // },
-                  {
-                    title: "Distance (cm.)",
-                    field: "distanceSensorValue",
-                    type: "numeric",
-                  },
-                ]}
-                data={playersData}
-                options={{
-                  exportButton: true,
-                  rowStyle: {
-                    fontSize: 16,
-                  },
-                }}
-              />
-            </Row>
+                {getPIN}
+              </Row>
+            </Col>
+            <Col xs={3}>
+              <Row
+                className="p p-1 mx-0 text-white text-align-center"
+                style={{ height: "40%", backgroundColor: "#000000" }}
+              >
+                <MdOutlineTimer />
+                Stopwatch Timer
+              </Row>
+
+              <Row
+                className="p7 p-1 mx-0 border border-dark text-align-center"
+                style={{ height: "60%", backgroundColor: "#FFFFFF" }}
+              >
+                {stopwatchElapsedTime.hoursElapsedTime} :{" "}
+                {stopwatchElapsedTime.minutesElapsedTime < 10
+                  ? "0" + stopwatchElapsedTime.minutesElapsedTime
+                  : stopwatchElapsedTime.minutesElapsedTime}{" "}
+                :{" "}
+                {stopwatchElapsedTime.secondsElapsedTime < 10
+                  ? "0" + stopwatchElapsedTime.secondsElapsedTime
+                  : stopwatchElapsedTime.secondsElapsedTime}
+              </Row>
+            </Col>
+            <Col xs={6}>
+              <Row
+                className="p p-1 mx-0 text-white text-align-center"
+                style={{ height: "40%", backgroundColor: "#000000" }}
+              >
+                <AiOutlineMenu />
+                Menu
+              </Row>
+              <Row
+                className="p-1 mx-0 border border-dark"
+                style={{ height: "60%", backgroundColor: "#FFFFFF" }}
+              >
+                <Col xs={3}>
+                  <Row
+                    className="p-1 mx-0"
+                    style={{ height: "100%", backgroundColor: "#FFFFFF" }}
+                  >
+                    <Button
+                      onClick={async () => {
+                        if (getInClassRoom) {
+                          await db.ref("gameSessions/" + getPIN).update({
+                            gameAlreadyStarted: true,
+                            gameStarted: true,
+                            timeIsActived: true,
+                            timeIsPaused: false,
+                          });
+                        }
+                        startStopwatch();
+                        
+                        setIsCloseResetTimerButton(true);
+                      }}
+                      disabled={timeIsActive && timeIsPaused}
+                    >
+                      <Row className="p3 text-align-center" xs={12}>
+                        Start
+                      </Row>
+                    </Button>
+                  </Row>
+                </Col>
+                <Col xs={3}>
+                  <Row
+                    className="p-1 mx-0"
+                    style={{ height: "100%", backgroundColor: "#FFFFFF" }}
+                  >
+                    <Button
+                      onClick={async () => {
+                        if (getInClassRoom) {
+                          await db.ref("gameSessions/" + getPIN).update({
+                            gameAlreadyStarted: true,
+                            gameStarted: true,
+                            timeIsActived: false,
+                            timeIsPaused: true,
+                          });
+                        }
+                        stopStopwatch();
+                        setIsCloseResetTimerButton(false);
+                      }}
+                      disabled={!(timeIsActive && timeIsPaused)}
+                    >
+                      <Row className="p3 text-align-center" xs={12}>
+                        Stop
+                      </Row>
+                    </Button>
+                  </Row>
+                </Col>
+                <Col xs={3}>
+                  <Row
+                    className="p-1 mx-0"
+                    style={{ height: "100%", backgroundColor: "#FFFFFF" }}
+                  >
+                    <Button
+                      onClick={async () => {
+                        if (getInClassRoom) {
+                          await db.ref("gameSessions/" + getPIN).update({
+                            gameAlreadyStarted: true,
+                            gameStarted: false,
+                            timeIsActived: false,
+                            timeIsPaused: false,
+                          });
+                        }
+                        resetStopwatch();
+                        setIsCloseResetTimerButton(true);
+                      }}
+                      disabled={isCloseResetTimerButton}
+                    >
+                      <Row className="p3 text-align-center" xs={12}>
+                        Reset
+                      </Row>
+                    </Button>
+                  </Row>
+                </Col>
+                <Col xs={3}>
+                  <Row
+                    className="p-1 mx-0"
+                    style={{ height: "100%", backgroundColor: "#FFFFFF" }}
+                  >
+                    <Button
+                      variant="danger"
+                      onClick={async () => {
+                        onExitButtonEvent();
+                      }}
+                      disabled={(timeIsActive && timeIsPaused) || !isCloseResetTimerButton }
+                    >
+                      <Row className="p3 text-align-center" xs={12}>
+                        Exit
+                      </Row>
+                    </Button>
+                  </Row>
+                </Col>
+              </Row>
+            </Col>
           </Row>
-        )}
+
+          <Row className="mx-0" style={{ height: "10%" }}>
+            <Col
+              xs={2}
+              className="p text-white text-align-center"
+              style={{ backgroundColor: "#000000" }}
+            >
+              Leaderboard
+            </Col>
+
+            <Col
+              xs={10}
+              className="p text-align-center border border-dark"
+              style={{ backgroundColor: "#FFFFFF" }}
+            >
+              {roomHostName}
+            </Col>
+          </Row>
+          <Row
+            className="p-1 mx-0  border border-dark"
+            style={{ width: "100%", height: "65%", backgroundColor: "#D3DEDC" }}
+          >
+            <DataGrid
+              dataSource={playersData}
+              keyExpr="groupName"
+              showBorders={true}
+              allowColumnReordering={true}
+              ref={dataGridRef}
+              // allowColumnResizing={true}
+              columnAutoWidth={true}
+            >
+              <Editing
+                mode="row"
+                // changes={changes}
+                onChangesChange={onChangesChange}
+                // editRowKey={editRowKey}
+                // onEditRowKeyChange={onEditRowKeyChange}
+                allowUpdating={true && !gameStarted}
+              />
+              <Scrolling columnRenderingMode="virtual" />
+              <GroupPanel visible={true} />
+              <SearchPanel visible={true} />
+              <Grouping autoExpandAll={true} />
+              <Sorting mode="multiple" />
+              <Column
+                dataField="groupName"
+                dataType="string"
+                caption="Group Name"
+                allowEditing={false}
+              />
+              <Column
+                dataField="deviceName"
+                dataType="string"
+                caption="Robot Name"
+                allowEditing={false}
+              />
+              <Column
+                dataField="parcelCorrectCount"
+                dataType="number"
+                caption="Sent Correctly Parcel Count"
+                allowEditing={true && !gameStarted}
+                defaultSortOrder="desc"
+              />
+              <Column
+                dataField="distanceSensorValue"
+                dataType="number"
+                caption="Distance (m.)"
+                allowEditing={false}
+                defaultSortOrder="asc"
+              />
+              <Column
+                alignment="right"
+                dataField="timeFinishedRecord"
+                dataType="string"
+                caption="Recorded Time (h:mm:ss)"
+                allowEditing={false}
+                defaultSortOrder="asc"
+              />
+              <Toolbar>
+                <Item name="groupPanel" />
+                <Item location="after">
+                  <ButtonD
+                    icon="exportpdf"
+                    text="Export to PDF"
+                    onClick={exportGridPDF}
+                  />
+                  <ButtonD
+                    icon="exportxlsx"
+                    text="Export to XLSX"
+                    onClick={exportGridExcel}
+                  />
+                </Item>
+                <Item name="searchPanel" />
+              </Toolbar>
+            </DataGrid>
+          </Row>
+        </Row>
+        {/* )} */}
       </div>
     );
   } else if (FSMPage === "MULTIPLAYER_MODE_LOADINGPAGE") {
@@ -2366,23 +3738,27 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "20%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+                <Row
+                  className="loadinglogoh p-3 mx-0"
+                  style={{ height: "60%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph3 text-align-center p-1 mx-0"
+                  style={{ height: "20%" }}
+                  xs={12}
+                >
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
@@ -2417,23 +3793,65 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+
+                <Row
+                  className="p-3 mx-0"
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="warninglogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph8 p-bold text-align-center p-1 mx-0"
+                  style={{ height: "15%" }}
+                  xs={12}
+                >
+                  Oops!
+                </Row>
+
+                <Row
+                  className="ph7 text-align-center p-1 mx-0"
+                  style={{ textAlign: "center", height: "20%" }}
+                  xs={12}
+                >
+                  The game of this room
+                  <br />
+                  has already started
+                  <br />
+                  or The host of the room left.
+                  <br />
+                  Thanks for playing!
+                </Row>
+                <Row
+                  className="p text-align-center p-1 mx-0"
+                  style={{ display: "flex", height: "20%" }}
+                  xs={12}
+                >
+                  <Button
+                    size="lg"
+                    variant="danger"
+                    onClick={() => {
+                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                    }}
+                    style={{ width: "75%" }}
+                  >
+                    <Row className="ph7 text-align-center" xs={12}>
+                      <FaHome />
+                      Go Back to Homepage
+                    </Row>
+                  </Button>
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
@@ -2446,7 +3864,7 @@ export default function Multiplayer() {
                 ></Row>
                 <Row
                   className="warninglogo p-3 mx-0"
-                  style={{ height: "30%", backgroundColor: "#FFFFFF" }}
+                  style={{ height: "25%", backgroundColor: "#FFFFFF" }}
                 ></Row>
                 <Row
                   className="p2 p-bold text-align-center p-1 mx-0"
@@ -2502,23 +3920,65 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+
+                <Row
+                  className="p-3 mx-0"
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="warninglogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph8 p-bold text-align-center p-1 mx-0"
+                  style={{ height: "15%" }}
+                  xs={12}
+                >
+                  Oops!
+                </Row>
+
+                <Row
+                  className="ph7 text-align-center p-1 mx-0"
+                  style={{ textAlign: "center", height: "20%" }}
+                  xs={12}
+                >
+                  The game of this room
+                  <br />
+                  has already started
+                  <br />
+                  or The host of the room left.
+                  <br />
+                  Thanks for playing!
+                </Row>
+                <Row
+                  className="p text-align-center p-1 mx-0"
+                  style={{ display: "flex", height: "20%" }}
+                  xs={12}
+                >
+                  <Button
+                    size="lg"
+                    variant="danger"
+                    onClick={() => {
+                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                    }}
+                    style={{ width: "75%" }}
+                  >
+                    <Row className="ph7 text-align-center" xs={12}>
+                      <FaHome />
+                      Go Back to Homepage
+                    </Row>
+                  </Button>
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
@@ -2587,23 +4047,61 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+
+                <Row
+                  className="p-3 mx-0"
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="warninglogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph8 p-bold text-align-center p-1 mx-0"
+                  style={{ height: "15%" }}
+                  xs={12}
+                >
+                  Oops!
+                </Row>
+
+                <Row
+                  className="ph7 text-align-center p-1 mx-0"
+                  style={{ textAlign: "center", height: "20%" }}
+                  xs={12}
+                >
+                  You've disconnected.
+                  <br />
+                  We're trying to reconnect you now.
+                </Row>
+                <Row
+                  className="p text-align-center p-1 mx-0"
+                  style={{ display: "flex", height: "20%" }}
+                  xs={12}
+                >
+                  <Button
+                    size="lg"
+                    variant="danger"
+                    onClick={() => {
+                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                    }}
+                    style={{ width: "75%" }}
+                  >
+                    <Row className="ph7 text-align-center" xs={12}>
+                      <FaHome />
+                      Go Back to Homepage
+                    </Row>
+                  </Button>
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
@@ -2671,23 +4169,59 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+
+                <Row
+                  className="p-3 mx-0"
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="warninglogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph8 p-bold text-align-center p-1 mx-0"
+                  style={{ height: "15%" }}
+                  xs={12}
+                >
+                  Oops!
+                </Row>
+
+                <Row
+                  className="ph7 text-align-center p-1 mx-0"
+                  style={{ textAlign: "center", height: "20%" }}
+                  xs={12}
+                >
+                  You need to enter
+                  <br />a game PIN before you can play.
+                </Row>
+                <Row
+                  className="p text-align-center p-1 mx-0"
+                  style={{ display: "flex", height: "20%" }}
+                  xs={12}
+                >
+                  <Button
+                    size="lg"
+                    variant="primary"
+                    onClick={() => {
+                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                    }}
+                    style={{ width: "75%" }}
+                  >
+                    <Row className="ph7 text-align-center" xs={12}>
+                      OK
+                    </Row>
+                  </Button>
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
@@ -2752,23 +4286,59 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+
+                <Row
+                  className="p-3 mx-0"
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="warninglogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph8 p-bold text-align-center p-1 mx-0"
+                  style={{ height: "15%" }}
+                  xs={12}
+                >
+                  Oops!
+                </Row>
+
+                <Row
+                  className="ph7 text-align-center p-1 mx-0"
+                  style={{ textAlign: "center", height: "20%" }}
+                  xs={12}
+                >
+                  You need to enter
+                  <br />a (group) name before you can play.
+                </Row>
+                <Row
+                  className="p text-align-center p-1 mx-0"
+                  style={{ display: "flex", height: "20%" }}
+                  xs={12}
+                >
+                  <Button
+                    size="lg"
+                    variant="primary"
+                    onClick={() => {
+                      setFSMPage("MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE");
+                    }}
+                    style={{ width: "75%" }}
+                  >
+                    <Row className="ph7 text-align-center" xs={12}>
+                      OK
+                    </Row>
+                  </Button>
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
@@ -2835,23 +4405,60 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+
+                <Row
+                  className="p-3 mx-0"
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="warninglogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph8 p-bold text-align-center p-1 mx-0"
+                  style={{ height: "15%" }}
+                  xs={12}
+                >
+                  Oops!
+                </Row>
+
+                <Row
+                  className="ph7 text-align-center p-1 mx-0"
+                  style={{ textAlign: "center", height: "20%" }}
+                  xs={12}
+                >
+                  You need to enter
+                  <br />
+                  your host room name before you can remote.
+                </Row>
+                <Row
+                  className="p text-align-center p-1 mx-0"
+                  style={{ display: "flex", height: "20%" }}
+                  xs={12}
+                >
+                  <Button
+                    size="lg"
+                    variant="primary"
+                    onClick={() => {
+                      setFSMPage("MULTIPLAYER_MODE_HOST_FILLROOMNAME_PAGE");
+                    }}
+                    style={{ width: "75%" }}
+                  >
+                    <Row className="ph7 text-align-center" xs={12}>
+                      OK
+                    </Row>
+                  </Button>
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
@@ -2916,23 +4523,58 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+
+                <Row
+                  className="p-3 mx-0"
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="warninglogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph8 p-bold text-align-center p-1 mx-0"
+                  style={{ height: "15%" }}
+                  xs={12}
+                >
+                  Oops!
+                </Row>
+
+                <Row
+                  className="ph7 text-align-center p-1 mx-0"
+                  style={{ textAlign: "center", height: "20%" }}
+                  xs={12}
+                >
+                  Sorry, the (group) name is taken.
+                </Row>
+                <Row
+                  className="p text-align-center p-1 mx-0"
+                  style={{ display: "flex", height: "20%" }}
+                  xs={12}
+                >
+                  <Button
+                    size="lg"
+                    variant="primary"
+                    onClick={() => {
+                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                    }}
+                    style={{ width: "75%" }}
+                  >
+                    <Row className="ph7 text-align-center" xs={12}>
+                      OK
+                    </Row>
+                  </Button>
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
@@ -2999,23 +4641,60 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+
+                <Row
+                  className="p-3 mx-0"
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="warninglogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph8 p-bold text-align-center p-1 mx-0"
+                  style={{ height: "15%" }}
+                  xs={12}
+                >
+                  Oops!
+                </Row>
+
+                <Row
+                  className="ph7 text-align-center p-1 mx-0"
+                  style={{ textAlign: "center", height: "20%" }}
+                  xs={12}
+                >
+                  Game PIN wasn't recognized.
+                  <br />
+                  Please check and try again.
+                </Row>
+                <Row
+                  className="p text-align-center p-1 mx-0"
+                  style={{ display: "flex", height: "20%" }}
+                  xs={12}
+                >
+                  <Button
+                    size="lg"
+                    variant="primary"
+                    onClick={() => {
+                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                    }}
+                    style={{ width: "75%" }}
+                  >
+                    <Row className="ph7 text-align-center" xs={12}>
+                      OK
+                    </Row>
+                  </Button>
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">
@@ -3080,23 +4759,58 @@ export default function Multiplayer() {
         style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
       >
         {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+
+                <Row
+                  className="p-3 mx-0"
+                  style={{ height: "5%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="warninglogo p-3 mx-0"
+                  style={{ height: "15%", backgroundColor: "#FFFFFF" }}
+                ></Row>
+                <Row
+                  className="ph8 p-bold text-align-center p-1 mx-0"
+                  style={{ height: "15%" }}
+                  xs={12}
+                >
+                  Oops!
+                </Row>
+
+                <Row
+                  className="ph7 text-align-center p-1 mx-0"
+                  style={{ textAlign: "center", height: "20%" }}
+                  xs={12}
+                >
+                  Something went wrong!
+                </Row>
+                <Row
+                  className="p text-align-center p-1 mx-0"
+                  style={{ display: "flex", height: "20%" }}
+                  xs={12}
+                >
+                  <Button
+                    size="lg"
+                    variant="primary"
+                    onClick={() => {
+                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                    }}
+                    style={{ width: "75%" }}
+                  >
+                    <Row className="ph7 text-align-center" xs={12}>
+                      OK
+                    </Row>
+                  </Button>
+                </Row>
+              </Col>
+            </Row>
           </Row>
         ) : (
           <Row className="vw-100 vh-100 p-1 mx-0">

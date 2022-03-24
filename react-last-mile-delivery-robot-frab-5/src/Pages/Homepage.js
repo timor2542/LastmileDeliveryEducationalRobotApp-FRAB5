@@ -11,10 +11,10 @@
 
 /* REACT LIBRARY TOPICS RELATED CODE BEGIN */
 
-import React, { useState, useEffect, useCallback } from "react"; // include React Library
+import React, { useState, useEffect} from "react"; // include React Library
 import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { FaUser, FaUsers } from "react-icons/fa"; // include React Icons Library
-import { BsArrowsFullscreen, BsFullscreenExit } from "react-icons/bs"; // include React Icons Library
+// import { BsArrowsFullscreen, BsFullscreenExit } from "react-icons/bs"; // include React Icons Library
 import { Button, Col, Row } from "react-bootstrap"; // include React Bootstrap Library
 import { useMediaQuery } from "react-responsive"; // include React Responsive Library
 import { FullScreen, useFullScreenHandle } from "react-full-screen";
@@ -22,7 +22,10 @@ import { FullScreen, useFullScreenHandle } from "react-full-screen";
 /* EXPORT DEFAULT FUNCTION HOMEPAGE CODE BEGIN */
 export default function Homepage() {
   const handle = useFullScreenHandle();
+
+  // eslint-disable-next-line
   const [version, setVersion] = useState("1.4.0");
+
   const isPortrait = useMediaQuery({ query: "(orientation: portrait)" }); // Check responsive.
   const history = useHistory(); // Call window.history of React
 

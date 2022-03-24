@@ -18,6 +18,6 @@ import App from "./App";
 // import * as serviceWorker from "./serviceWorker";
 
 import 'bootstrap/dist/css/bootstrap.min.css'
-// import 'react-nipple/lib/styles.css';
+import 'devextreme/dist/css/dx.light.css';
 
 ReactDOM.render(<App />, document.getElementById('root'));
