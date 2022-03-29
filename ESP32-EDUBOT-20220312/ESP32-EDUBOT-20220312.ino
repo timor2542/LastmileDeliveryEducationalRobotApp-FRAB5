@@ -51,17 +51,11 @@ BLEServer* pServer = NULL;
 BLECharacteristic* pEncoderSensorCharacteristic = NULL;
 BLECharacteristic* pCommandCharacteristic = NULL;
 
-#define BLE_NAME "ESP32-EDUBOT2"
+#define BLE_NAME "ESP32-EDUBOT3"
 #define MY_ESP32_SERVICE_UUID                 "818796aa-2f20-11ec-8d3d-0242ac130003"
 #define ENCODER_SENSOR_CHARACTERISTIC_UUID  "818799c0-2f20-11ec-8d3d-0242ac130003"
 #define COMMAND_CHARACTERISTIC_UUID    "81879be6-2f20-11ec-8d3d-0242ac130003"
 
-//void fdL(uint16_t pwm1);
-//void bkL(uint16_t pwm1);
-//void fdR(uint16_t pwm2);
-//void bkR(uint16_t pwm2);
-//void sl(uint16_t pwm);
-//void sr(uint16_t pwm);
 void drive(int power_L, int power_R);
 void blake();
 void resetEncoderLeft();
@@ -91,7 +85,6 @@ long num_ticks_r = 0;
 // Used to determine which way to turn to adjust
 long diff_l = 0;
 long diff_r = 0;
-
 
 
 // Remember previous encoder counts
@@ -225,10 +218,10 @@ class MyCharactertisticCallbacks: public BLECharacteristicCallbacks {
           num_ticks_r = 0;
           diff_l = 0;
           diff_r = 0;
-          detachInterrupt(digitalPinToInterrupt(encoderPin1Left));
-          detachInterrupt(digitalPinToInterrupt(encoderPin2Left));
-          detachInterrupt(digitalPinToInterrupt(encoderPin1Right));
-          detachInterrupt(digitalPinToInterrupt(encoderPin2Right));
+          attachInterrupt(digitalPinToInterrupt(encoderPin1Left), updateEncoderLeft, CHANGE);
+          attachInterrupt(digitalPinToInterrupt(encoderPin2Left), updateEncoderLeft, CHANGE);
+          attachInterrupt(digitalPinToInterrupt(encoderPin1Right), updateEncoderRight, CHANGE);
+          attachInterrupt(digitalPinToInterrupt(encoderPin2Right), updateEncoderRight, CHANGE);
           STRIGHT_DIRECTION = false;
           ROTATION_DIRECTION = false;
           SPIN_LEFT_DIRECTION = false;
@@ -594,9 +587,11 @@ void updateEncoderLeft() {
 
   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
     encoderValueLeft ++;
+    encoderAbsValueLeft ++;
   }
   else if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
     encoderValueLeft --;
+    encoderAbsValueLeft ++;
   }
 
   lastEncodedLeft = encoded; //store this value for next time
@@ -645,9 +640,11 @@ void updateEncoderRight() {
 
   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
     encoderValueRight --;
+    encoderAbsValueRight ++;
   }
   else if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
     encoderValueRight ++;
+    encoderAbsValueRight ++;
   }
 
   lastEncodedRight = encoded; //store this value for next time
