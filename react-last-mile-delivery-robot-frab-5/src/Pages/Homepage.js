@@ -17,14 +17,12 @@ import { FaUser, FaUsers } from "react-icons/fa"; // include React Icons Library
 // import { BsArrowsFullscreen, BsFullscreenExit } from "react-icons/bs"; // include React Icons Library
 import { Button, Col, Row } from "react-bootstrap"; // include React Bootstrap Library
 import { useMediaQuery } from "react-responsive"; // include React Responsive Library
-import { FullScreen, useFullScreenHandle } from "react-full-screen";
 /* REACT LIBRARY TOPICS RELATED CODE END */
 /* EXPORT DEFAULT FUNCTION HOMEPAGE CODE BEGIN */
 export default function Homepage() {
-  const handle = useFullScreenHandle();
 
   // eslint-disable-next-line
-  const [version, setVersion] = useState("1.4.0");
+  const [version, setVersion] = useState("1.5.0");
 
   const isPortrait = useMediaQuery({ query: "(orientation: portrait)" }); // Check responsive.
   const history = useHistory(); // Call window.history of React
@@ -45,7 +43,7 @@ export default function Homepage() {
 
   /* Convert to HTML5 */
   return (
-    <FullScreen handle={handle}>
+    // <FullScreen handle={handle}>
     <div
       className="vw-100 vh-100 mx-0"
       style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
@@ -54,38 +52,6 @@ export default function Homepage() {
           <Row className="vw-100 vh-100 p-1 mx-0">
             <Row className="p-3 mx-0" xs={12}>
               <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
-              {/* <Row
-                  style={{alignItems:"center",height: "10%", backgroundColor: "#FFFFFF" }}
-                >
-                  <Col style={{textAlign:"right"}}>
-                    {handle.active ? (
-                      <Button
-                        size="lg"
-                        color="primary"
-                        variant="outline-dark"
-                      style={{ height: "100%" }}
-                        onClick={handle.exit}
-                      >
-                        <Row className="ph3 text-align-center" xs={12}>
-                          <BsFullscreenExit />
-                        </Row>
-                      </Button>
-                    ) : (
-                      <Button
-                        size="lg"
-                        color="primary"
-                        variant="outline-dark"
-                        
-                      style={{height: "50%" }}
-                        onClick={handle.enter}
-                      >
-                        <Row className="ph3 text-align-center" xs={12}>
-                          <BsArrowsFullscreen />
-                        </Row>
-                      </Button>
-                    )}
-                    </Col>
-                </Row> */}
               <Row
                   className="lastmilelogo p-3 mx-0"
                   style={{ height: "20%", backgroundColor: "#FFFFFF" }}
@@ -162,38 +128,6 @@ export default function Homepage() {
           <Row className="vw-100 vh-100 p-1 mx-0">
             <Row className="p-3 mx-0" xs={12}>
               <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
-              {/* <Row
-                  style={{alignItems:"center",height: "10%", backgroundColor: "#FFFFFF" }}
-                >
-                  <Col style={{textAlign:"right"}}>
-                    {handle.active ? (
-                      <Button
-                        size="lg"
-                        color="primary"
-                        variant="outline-dark"
-                      style={{ height: "100%" }}
-                        onClick={handle.exit}
-                      >
-                        <Row className="p3 text-align-center" xs={12}>
-                          <BsFullscreenExit />
-                        </Row>
-                      </Button>
-                    ) : (
-                      <Button
-                        size="lg"
-                        color="primary"
-                        variant="outline-dark"
-                        
-                      style={{height: "50%" }}
-                        onClick={handle.enter}
-                      >
-                        <Row className="p3 text-align-center" xs={12}>
-                          <BsArrowsFullscreen />
-                        </Row>
-                      </Button>
-                    )}
-                    </Col>
-                </Row> */}
               <Row
                   className="lastmilelogo p-3 mx-0"
                   style={{ height: "20%", backgroundColor: "#FFFFFF" }}
@@ -267,7 +201,6 @@ export default function Homepage() {
           </Row>
         )}
     </div>
-    </FullScreen>
   );
 }
 

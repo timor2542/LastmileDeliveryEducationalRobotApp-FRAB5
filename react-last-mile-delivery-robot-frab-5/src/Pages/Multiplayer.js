@@ -83,7 +83,7 @@ export default function Multiplayer() {
   const handle = useFullScreenHandle();
 
   // eslint-disable-next-line
-  const [version, setVersion] = useState("1.4.0");
+  const [version, setVersion] = useState("1.5.0");
   /* CALL HISTORY CODE BEGIN */
   const history = useHistory();
   const dataGridRef = useRef();
@@ -97,7 +97,7 @@ export default function Multiplayer() {
       jsPDFDocument: doc,
       component: dataGrid,
     }).then(() => {
-      doc.save(String(roomHostName) + " 's Result.pdf");
+      doc.save(String(roomHostName) + "'s Result.pdf");
     });
   });
   const exportGridExcel = (e) => {
@@ -113,7 +113,7 @@ export default function Multiplayer() {
       workbook.xlsx.writeBuffer().then((buffer) => {
         saveAs(
           new Blob([buffer], { type: "application/octet-stream" }),
-          String(roomHostName) + " 's Result.xlsx"
+          String(roomHostName) + "'s Result.xlsx"
         );
       });
     });
@@ -129,31 +129,77 @@ export default function Multiplayer() {
     event.preventDefault();
     // your logic
     // window.alert("You go back")
-    if (getInClassRoom) {
-      if (isHost) {
-        await db.ref("gameSessions/" + getPIN).remove();
-      } else {
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .remove();
-      }
-    }
-    await disconnectToBluetoothDeviceImmediately();
-    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
+
+    // console.log("Back Button Detected.");
+    // if (getInClassRoom) {
+    //   // resetStopwatch();
+    //   if (isHost) {
+    //     await db.ref("gameSessions/" + getPIN).remove();
+    //   } else {
+    //     await db
+    //       .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+    //       .remove();
+    //   }
+    // }
+    // await disconnectToBluetoothDeviceImmediately();
+    // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
     history.push("/");
   }
+  // async function onBackButtonAdminEvent(event) {
+  //   // event.preventDefault();
+  //   // your logic
+  //   // window.alert("You go back")
+  //   console.log("Back Button Admin Detected.");
+  //   // if (getInClassRoom) {
+  //   //   // resetStopwatch();
+  //   //   if (isHost) {
+  //   //     await db.ref("gameSessions/" + getPIN).remove();
+  //   //   } else {
+  //   //     await db
+  //   //       .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+  //   //       .remove();
+  //   //   }
+  //   // }
+  //   // await disconnectToBluetoothDeviceImmediately();
+  //   // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
+    
+  //   history.push("/");
+  // }
   /* BACK BUTTON EVENT ON BROWNSER CODE END */
 
   /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE BEGIN */
   async function onExitButtonEvent() {
     // event.preventDefault();
     // your logic
-    await disconnectToBluetoothDeviceImmediately();
+    // console.log("Exit Button Detected.");
     setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
     if (getInClassRoom) {
+      // resetStopwatch();
       if (isHost) {
         await db.ref("gameSessions/" + getPIN).remove();
       } else {
+        
+    await disconnectToBluetoothDeviceImmediately();
+        await db
+          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+          .remove();
+      }
+    }
+    history.push("/");
+  }
+  async function onExitButtonAdminEvent() {
+    // event.preventDefault();
+    // your logic
+    // await disconnectToBluetoothDeviceImmediately();
+    // console.log("Exit Button Admin Detected.");
+    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
+    if (getInClassRoom) {
+      // resetStopwatch();
+      if (isHost) {
+        await db.ref("gameSessions/" + getPIN).remove();
+      } else {
+        
+    await disconnectToBluetoothDeviceImmediately();
         await db
           .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
           .remove();
@@ -187,6 +233,7 @@ export default function Multiplayer() {
           .remove();
       }
     }
+    history.push("/");
   };
 
   /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE COED END */
@@ -194,11 +241,27 @@ export default function Multiplayer() {
   useEffect(() => {
     window.addEventListener("beforeunload", onBeforeUnload);
     window.addEventListener("unload", afterUnload);
-    window.addEventListener("popstate", onBackButtonEvent);
+    // if (getInClassRoom) {
+    //   if (isHost) {
+    // window.addEventListener("popstate", onBackButtonAdminEvent);
+    //   } else {
+        window.addEventListener("popstate", onBackButtonEvent);
+    //   }
+    // } else {
+      // window.addEventListener("popstate", onBackButtonEvent);
+    // }
     return () => {
       window.removeEventListener("beforeunload", onBeforeUnload);
       window.removeEventListener("unload", afterUnload);
-      window.removeEventListener("popstate", onBackButtonEvent);
+      // if (getInClassRoom) {
+      //   if (isHost) {
+      // window.removeEventListener("popstate", onBackButtonAdminEvent);
+      //   } else {
+          // window.removeEventListener("popstate", onBackButtonEvent);
+      //   }
+      // } else {
+        window.removeEventListener("popstate", onBackButtonEvent);
+      // }
     };
   });
   /* DYNAMIC OF COMPONENT CODE END */
@@ -272,15 +335,20 @@ export default function Multiplayer() {
 
   async function onDisconnected(event) {
     setDistanceEncoderSensorValue((0).toFixed(3));
-
-    // await bluetoothDevice.gatt.disconnect();
-
-    // weightSensorCharacteristic = null;
     distanceEncoderSensorCharacteristic = null;
     commandCharacteristic = null;
     bluetoothDevice = null;
     setBluetoothDeviceName("Not connected");
     setIsBluetoothConnected(false);
+    // if (!isHost && getInClassRoom && !gotAlreadyHostLeftDetected) {
+    //   await db
+    //     .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+    //     .update({
+    //       deviceName: "Not connected",
+    //       distanceSensorValue: parseFloat((0).toFixed(3)),
+    //       parcelCorrectCount: 0,
+    //     });
+    // }
   }
 
   async function connectToBluetoothDevice() {
@@ -297,7 +365,6 @@ export default function Multiplayer() {
         filters: [{ namePrefix: "ESP32" }],
         optionalServices: [
           myESP32ServiceUUID,
-          // weightSensorCharacteristicUUID,
           distanceEncoderSensorCharacteristicUUID,
           commandCharacteristicUUID,
         ],
@@ -403,7 +470,7 @@ export default function Multiplayer() {
       commandCharacteristic = null;
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
-      if (!gotAlreadyHostLeftDetected) {
+      if (getInClassRoom && !gotAlreadyHostLeftDetected) {
         await db
           .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
           .update({
@@ -423,7 +490,7 @@ export default function Multiplayer() {
       commandCharacteristic = null;
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
-      if (!gotAlreadyHostLeftDetected) {
+      if (getInClassRoom && !gotAlreadyHostLeftDetected) {
         await db
           .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
           .update({
@@ -445,24 +512,13 @@ export default function Multiplayer() {
     }
 
     try {
-      // sendCommand(restartCommand);
-      // weightSensorCharacteristic.removeEventListener(
-      //   "characteristicvaluechanged",
-      //   handleWeightSensorNotifications
-      // );
       distanceEncoderSensorCharacteristic.removeEventListener(
         "characteristicvaluechanged",
         handleDistanceEncoderSensorNotifications
       );
-      // await weightSensorCharacteristic.stopNotifications();
       await distanceEncoderSensorCharacteristic.stopNotifications();
-      // sendCommand(0x56);
-      // resetAllValue();
-
       setDistanceEncoderSensorValue((0).toFixed(3));
-
       await bluetoothDevice.gatt.disconnect();
-
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
@@ -470,10 +526,6 @@ export default function Multiplayer() {
       setIsBluetoothConnected(false);
     } catch {
       setDistanceEncoderSensorValue((0).toFixed(3));
-
-      // await bluetoothDevice.gatt.disconnect();
-
-      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
@@ -500,7 +552,6 @@ export default function Multiplayer() {
             distanceSensorValue: parseFloat((result / 1000).toFixed(3)),
           });
       }
-      // setDistanceEncoderSensorValue((0.00329119230376073577362753116344*result).toFixed(1));
     } catch {}
   }
   async function sendCommand(data) {
@@ -667,6 +718,9 @@ export default function Multiplayer() {
           timeIsPaused: false,
           roomName: roomHostName,
           hostOnline: true,
+          timeHours: "0",
+          timeMinutes: "00",
+          timeSeconds: "00",
         });
         setGetPIN(generatedPin.toString());
         setFSMPage("MULTIPLAYER_MODE_HOST_CONTROLPANEL_PAGE");
@@ -756,65 +810,62 @@ export default function Multiplayer() {
         minutesElapsedTime: minutes,
         hoursElapsedTime: hours,
       });
+      let hours_str = String(hours);
+      let minutes_str = "00";
+      let seconds_str = "00";
+      if (minutes < 10) {
+        minutes_str = "0" + String(minutes);
+      } else {
+        minutes_str = String(minutes);
+      }
 
-      // _hoursTimeFinishedRecord = String(hours);
-      // if (minutes < 10) {
-      //   _minutesTimeFinishedRecord = "0" + String(minutes);
-      // } else {
-      //   _minutesTimeFinishedRecord = String(minutes);
-      // }
-      // if (seconds < 10) {
-      //   _secondsTimeFinishedRecord = "0" + String(seconds);
-      // } else {
-      //   _secondsTimeFinishedRecord = String(seconds);
-      // }
-      // if (getInClassRoom && groupPlayerName.trim() !== "" && !isUserFinished) {
-      //   await db
-      //     .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-      //     .update({
-      //       timeFinishedRecord:
-      //         _hoursTimeFinishedRecord +
-      //         " : " +
-      //         _minutesTimeFinishedRecord +
-      //         " : " +
-      //         _secondsTimeFinishedRecord,
-      //     });
-      // }
+      if (seconds < 10) {
+        seconds_str = "0" + String(seconds);
+      } else {
+        seconds_str = String(seconds);
+      }
+      if (getInClassRoom) {
+        await db.ref("gameSessions/" + getPIN).update({
+          timeHours: hours_str,
+          timeMinutes: minutes_str,
+          timeSeconds: seconds_str,
+        });
+      }
     }, 1);
   }
   async function stopStopwatch() {
     setTimeIsPaused(false);
     elapsedTime += Date.now() - startTime;
     clearInterval(intervalId);
-    _hoursTimeFinishedRecord = String(stopwatchElapsedTime.hoursElapsedTime);
-    if (stopwatchElapsedTime.minutesElapsedTime < 10) {
-      _minutesTimeFinishedRecord =
-        "0" + String(stopwatchElapsedTime.minutesElapsedTime);
-    } else {
-      _minutesTimeFinishedRecord = String(
-        stopwatchElapsedTime.minutesElapsedTime
-      );
-    }
-    if (stopwatchElapsedTime.secondsElapsedTime < 10) {
-      _secondsTimeFinishedRecord =
-        "0" + String(stopwatchElapsedTime.secondsElapsedTime);
-    } else {
-      _secondsTimeFinishedRecord = String(
-        stopwatchElapsedTime.secondsElapsedTime
-      );
-    }
-    if (getInClassRoom && groupPlayerName.trim() !== "") {
-      await db
-        .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-        .update({
-          timeFinishedRecord:
-            _hoursTimeFinishedRecord +
-            " : " +
-            _minutesTimeFinishedRecord +
-            " : " +
-            _secondsTimeFinishedRecord,
-        });
-    }
+    // _hoursTimeFinishedRecord = String(stopwatchElapsedTime.hoursElapsedTime);
+    // if (stopwatchElapsedTime.minutesElapsedTime < 10) {
+    //   _minutesTimeFinishedRecord =
+    //     "0" + String(stopwatchElapsedTime.minutesElapsedTime);
+    // } else {
+    //   _minutesTimeFinishedRecord = String(
+    //     stopwatchElapsedTime.minutesElapsedTime
+    //   );
+    // }
+    // if (stopwatchElapsedTime.secondsElapsedTime < 10) {
+    //   _secondsTimeFinishedRecord =
+    //     "0" + String(stopwatchElapsedTime.secondsElapsedTime);
+    // } else {
+    //   _secondsTimeFinishedRecord = String(
+    //     stopwatchElapsedTime.secondsElapsedTime
+    //   );
+    // }
+    // if (getInClassRoom && groupPlayerName.trim() !== "") {
+    //   await db
+    //     .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+    //     .update({
+    //       timeFinishedRecord:
+    //         _hoursTimeFinishedRecord +
+    //         " : " +
+    //         _minutesTimeFinishedRecord +
+    //         " : " +
+    //         _secondsTimeFinishedRecord,
+    //     });
+    // }
   }
 
   /* STOPWATCH TIMER CONTROL CODE END */
@@ -895,7 +946,14 @@ export default function Multiplayer() {
             // await disconnectToBluetoothDevice();
             setFSMPage("MULTIPLAYER_MODE_ERRORHOSTLOSTPAGE");
           }
-
+          setStopwatchElapsedTime({
+            secondsElapsedTime: parseInt(data.timeSeconds),
+            minutesElapsedTime: parseInt(data.timeMinutes),
+            hoursElapsedTime: parseInt(data.timeHours),
+          });
+          // secondsTime = parseInt(data.timeSeconds);
+          // minutesTime = parseInt(data.timeMinutes);
+          // hoursTime = parseInt(data.timeHours);
           // console.log("You are player.");
         } else {
           // console.log(data.players);
@@ -970,15 +1028,47 @@ export default function Multiplayer() {
     if (!gotAlreadyStart) {
       setGotAlreadyStart(true);
       // console.log("Start");
-      startStopwatch();
+      // startStopwatch();
     }
     setGotStart(false);
+  }
+  async function TimeFinishedRecord() {
+    _hoursTimeFinishedRecord = String(stopwatchElapsedTime.hoursElapsedTime);
+    if (stopwatchElapsedTime.minutesElapsedTime < 10) {
+      _minutesTimeFinishedRecord =
+        "0" + String(stopwatchElapsedTime.minutesElapsedTime);
+    } else {
+      _minutesTimeFinishedRecord = String(
+        stopwatchElapsedTime.minutesElapsedTime
+      );
+    }
+    if (stopwatchElapsedTime.secondsElapsedTime < 10) {
+      _secondsTimeFinishedRecord =
+        "0" + String(stopwatchElapsedTime.secondsElapsedTime);
+    } else {
+      _secondsTimeFinishedRecord = String(
+        stopwatchElapsedTime.secondsElapsedTime
+      );
+    }
+    if (getInClassRoom && groupPlayerName.trim() !== "") {
+      await db
+        .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+        .update({
+          timeFinishedRecord:
+            _hoursTimeFinishedRecord +
+            " : " +
+            _minutesTimeFinishedRecord +
+            " : " +
+            _secondsTimeFinishedRecord,
+        });
+    }
   }
   if (gotStop && !isUserFinished) {
     if (!gotAlreadyStop) {
       setGotAlreadyStop(true);
       // console.log("Stop");
-      stopStopwatch();
+      // stopStopwatch();
+      TimeFinishedRecord();
       sendCommand(stopCommand);
     }
     setGotStop(false);
@@ -1006,39 +1096,18 @@ export default function Multiplayer() {
   if (isUserFinished) {
     if (!isUserAlreadyFinished) {
       setIsUserAlreadyFinished(true);
-      stopStopwatch();
+      // stopStopwatch();
+      TimeFinishedRecord();
       sendCommand(stopCommand);
-      // _hoursTimeFinishedRecord = String(stopwatchElapsedTime.hoursElapsedTime);
-      // if (stopwatchElapsedTime.minutesElapsedTime < 10) {
-      //   _minutesTimeFinishedRecord =
-      //     "0" + String(stopwatchElapsedTime.minutesElapsedTime);
-      // } else {
-      //   _minutesTimeFinishedRecord = String(
-      //     stopwatchElapsedTime.minutesElapsedTime
-      //   );
-      // }
-      // if (stopwatchElapsedTime.secondsElapsedTime < 10) {
-      //   _secondsTimeFinishedRecord =
-      //     "0" + String(stopwatchElapsedTime.secondsElapsedTime);
-      // } else {
-      //   _secondsTimeFinishedRecord = String(
-      //     stopwatchElapsedTime.secondsElapsedTime
-      //   );
-      // }
-      // if (getInClassRoom && groupPlayerName.trim() !== "") {
-      //   db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
-      //     {
-      //       timeFinishedRecord:
-      //         _hoursTimeFinishedRecord +
-      //         " : " +
-      //         _minutesTimeFinishedRecord +
-      //         " : " +
-      //         _secondsTimeFinishedRecord,
-      //     }
-      //   );
-      // }
     }
   }
+  // else{
+  //   setStopwatchElapsedTime({
+  //     secondsElapsedTime: secondsTime,
+  //     minutesElapsedTime: minutesTime,
+  //     hoursElapsedTime: hoursTime,
+  //   })
+  // }
   if (gotHostLeftDetected) {
     if (!gotAlreadyHostLeftDetected) {
       setGotAlreadyHostLeftDetected(true);
@@ -1055,14 +1124,17 @@ export default function Multiplayer() {
     // eslint-disable-next-line
     history.block(async () => {
       if (getInClassRoom) {
+        // resetStopwatch();
         if (isHost) {
           await db.ref("gameSessions/" + getPIN).remove();
         } else {
+          await disconnectToBluetoothDeviceImmediately();
           await db
             .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
             .remove();
         }
       }
+      // history.push('/');
     });
   });
   /* BACK BUTTON DETECTION TO REMOVE DATA IN FIREBASE CODE END */
@@ -1070,25 +1142,26 @@ export default function Multiplayer() {
   /* FETCHING DATA ON FIREBASE CONTROL CODE END */
   // const [editRowKey, setEditRowKey] = useState(null);
 
-  const onChangesChange = useCallback(async (changes) => {
-    //  await db
-    //       .ref("gameSessions/" + getPIN + "/players/" + editRowKey)
-    //       .remove();
-    //     }
-    if (changes.length > 0) {
-      // console.log(changes[0].key)
-      // console.log(changes[0].data)
-      if (getInClassRoom) {
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + changes[0].key)
-          .update({
-            parcelCorrectCount: changes[0].data.parcelCorrectCount,
-          });
+  const onChangesChange = useCallback(
+    async (changes) => {
+      //  await db
+      //       .ref("gameSessions/" + getPIN + "/players/" + editRowKey)
+      //       .remove();
+      //     }
+      if (changes.length > 0) {
+        // console.log(changes[0].key)
+        // console.log(changes[0].data)
+        if (getInClassRoom) {
+          await db
+            .ref("gameSessions/" + getPIN + "/players/" + changes[0].key)
+            .update({
+              parcelCorrectCount: changes[0].data.parcelCorrectCount,
+            });
+        }
       }
-    }
-
-
-  }, [getInClassRoom, getPIN]);
+    },
+    [getInClassRoom, getPIN]
+  );
 
   // const onEditRowKeyChange = React.useCallback((editRowKey) => {
   //   console.log(editRowKey);
@@ -1392,22 +1465,6 @@ export default function Multiplayer() {
                           </Row>
                         </Button>
                       </Row>
-                      {/* <Row
-                      className="p7 text-align-center"
-                      style={{ height: "50%" }}
-                    >
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        style={{ width: "75%" }}
-                        onClick={() => history.push("/")}
-                      >
-                        <Row className="p3 text-align-center" xs={12}>
-                          <FaHome />
-                          Go Back to Homepage
-                        </Row>
-                      </Button>
-                    </Row> */}
                     </Col>
                   </Row>
                   <Row
@@ -2238,6 +2295,10 @@ export default function Multiplayer() {
                     xs={6}
                   >
                     <Row xs={12}>
+                    {(!isUserFinished) ? 
+                      
+                      <div>
+                      {" "}
                       {stopwatchElapsedTime.hoursElapsedTime} :{" "}
                       {stopwatchElapsedTime.minutesElapsedTime < 10
                         ? "0" + stopwatchElapsedTime.minutesElapsedTime
@@ -2246,6 +2307,14 @@ export default function Multiplayer() {
                       {stopwatchElapsedTime.secondsElapsedTime < 10
                         ? "0" + stopwatchElapsedTime.secondsElapsedTime
                         : stopwatchElapsedTime.secondsElapsedTime}
+                      </div>
+                      :
+                        <div>
+                          {_hoursTimeFinishedRecord} :{" "}
+                          {_minutesTimeFinishedRecord} :{" "}
+                          {_secondsTimeFinishedRecord}
+                        </div>
+                      }
                     </Row>
                   </Col>
                 </Row>
@@ -3207,6 +3276,9 @@ export default function Multiplayer() {
                     xs={6}
                   >
                     <Row xs={12}>
+                      {(!isUserFinished) ? 
+                      
+                      <div>
                       {" "}
                       {stopwatchElapsedTime.hoursElapsedTime} :{" "}
                       {stopwatchElapsedTime.minutesElapsedTime < 10
@@ -3216,6 +3288,14 @@ export default function Multiplayer() {
                       {stopwatchElapsedTime.secondsElapsedTime < 10
                         ? "0" + stopwatchElapsedTime.secondsElapsedTime
                         : stopwatchElapsedTime.secondsElapsedTime}
+                      </div>
+                      :
+                        <div>
+                          {_hoursTimeFinishedRecord} :{" "}
+                          {_minutesTimeFinishedRecord} :{" "}
+                          {_secondsTimeFinishedRecord}
+                        </div>
+                      }
                     </Row>
                   </Col>
                 </Row>
@@ -3455,26 +3535,6 @@ export default function Multiplayer() {
   } else if (FSMPage === "MULTIPLAYER_MODE_HOST_CONTROLPANEL_PAGE") {
     return (
       <div className="vw-100 vh-100" style={{ backgroundColor: "#F7F6E7" }}>
-        {/* {isPortrait ? (
-          <Row className="vw-100 vh-100 mx-0 ">
-            <Col style={{ backgroundColor: "#FFFFFF" }}>
-              <Row
-                className="lastmilelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-              <Row
-                className="p2 text-align-center p-1 mx-0"
-                style={{ height: "10%" }}
-              >
-                Please rotate your device to landscape mode.
-              </Row>
-              <Row
-                className="rotatelogo p2 text-align-center p-1 mx-0"
-                style={{ height: "40%" }}
-              ></Row>
-            </Col>
-          </Row>
-        ) : ( */}
         <Row className="vw-100 vh-100 p-1 mx-0 ">
           <Row
             className="p-1 mx-0 "
@@ -3547,7 +3607,7 @@ export default function Multiplayer() {
                           });
                         }
                         startStopwatch();
-                        
+
                         setIsCloseResetTimerButton(true);
                       }}
                       disabled={timeIsActive && timeIsPaused}
@@ -3597,6 +3657,9 @@ export default function Multiplayer() {
                             gameStarted: false,
                             timeIsActived: false,
                             timeIsPaused: false,
+                            timeHours: "0",
+                            timeMinutes: "00",
+                            timeSeconds: "00",
                           });
                         }
                         resetStopwatch();
@@ -3618,9 +3681,12 @@ export default function Multiplayer() {
                     <Button
                       variant="danger"
                       onClick={async () => {
-                        onExitButtonEvent();
+                        onExitButtonAdminEvent();
                       }}
-                      disabled={(timeIsActive && timeIsPaused) || !isCloseResetTimerButton }
+                      disabled={
+                        (timeIsActive && timeIsPaused) ||
+                        !isCloseResetTimerButton
+                      }
                     >
                       <Row className="p3 text-align-center" xs={12}>
                         Exit
@@ -3839,8 +3905,17 @@ export default function Multiplayer() {
                   <Button
                     size="lg"
                     variant="danger"
-                    onClick={() => {
-                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                    onClick={async () => {
+                      if (getInClassRoom) {
+                        if (isHost) {
+                          await db.ref("gameSessions/" + getPIN).remove();
+                        } else {
+                          await db
+                            .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+                            .remove();
+                        }
+                      }
+                      history.push('/');
                     }}
                     style={{ width: "75%" }}
                   >
@@ -3895,8 +3970,16 @@ export default function Multiplayer() {
                       size="sm"
                       color="primary"
                       variant="danger"
-                      onClick={() => {
-                        // setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                      onClick={async () => {
+                        if (getInClassRoom) {
+                          if (isHost) {
+                            await db.ref("gameSessions/" + getPIN).remove();
+                          } else {
+                            await db
+                              .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+                              .remove();
+                          }
+                        }
                         history.push("/");
                       }}
                     >
@@ -3966,8 +4049,8 @@ export default function Multiplayer() {
                   <Button
                     size="lg"
                     variant="danger"
-                    onClick={() => {
-                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
+                    onClick={async () => {
+                      await history.push('/');
                     }}
                     style={{ width: "75%" }}
                   >

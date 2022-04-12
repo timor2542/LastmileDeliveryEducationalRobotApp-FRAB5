@@ -51,7 +51,7 @@ BLEServer* pServer = NULL;
 BLECharacteristic* pEncoderSensorCharacteristic = NULL;
 BLECharacteristic* pCommandCharacteristic = NULL;
 
-#define BLE_NAME "ESP32-EDUBOT3"
+#define BLE_NAME "ESP32-EDUBOT5"
 #define MY_ESP32_SERVICE_UUID                 "818796aa-2f20-11ec-8d3d-0242ac130003"
 #define ENCODER_SENSOR_CHARACTERISTIC_UUID  "818799c0-2f20-11ec-8d3d-0242ac130003"
 #define COMMAND_CHARACTERISTIC_UUID    "81879be6-2f20-11ec-8d3d-0242ac130003"

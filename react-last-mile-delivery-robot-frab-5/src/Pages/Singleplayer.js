@@ -15,9 +15,7 @@ import React, { useState, useEffect } from "react"; // include React Library
 import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { Button, Col, Row } from "react-bootstrap";
 import { useMediaQuery } from "react-responsive";
-// import { AiOutlineMenu } from "react-icons/ai"; // include React Icons Library
 import { BiReset } from "react-icons/bi"; // include React Icons Library
-// import { FaWeight, FaLink } from "react-icons/fa"; // include React Icons Library
 import { GiExitDoor} from "react-icons/gi"; // include React Icons Library
 import {
   ImArrowDown,
@@ -34,7 +32,6 @@ import { RiPinDistanceFill } from "react-icons/ri"; // include React Icons Libra
 import { SiProbot, SiStatuspal } from "react-icons/si"; // include React Icons Library
 
 let bluetoothDevice = null; // Bluetooth Device Name Global Variable
-// let weightSensorCharacteristic = null; // Weight Sensor Characteristic Global Variable
 let distanceEncoderSensorCharacteristic = null; // Distance Encoder Sensor Characteristic Global Variable
 let commandCharacteristic = null; // Command Characteristic Global Variable
 
@@ -42,7 +39,7 @@ let commandCharacteristic = null; // Command Characteristic Global Variable
 export default function Singleplayer() {
   
   // eslint-disable-next-line
-  const [version, setVersion] = useState("1.4.0");
+  const [version, setVersion] = useState("1.5.0");
   
   /* CALL HISTORY BEGIN */
   const history = useHistory();
@@ -152,12 +149,9 @@ export default function Singleplayer() {
   }
   async function connectToBluetoothDevice() {
     if (!navigator.bluetooth) {
-      alert(
-        "Caution: Web Bluetooth is disabled! Please go to chrome://flags and enable it."
-      );
       return;
     }
-    if (isBluetoothConnected && bluetoothDeviceName !== "Not connected") {
+    if (isBluetoothConnected && bluetoothDeviceName !== "Not connected"){
       return;
     }
     try {
@@ -179,15 +173,11 @@ export default function Singleplayer() {
       // //console.log("Connecting to GATT Server...");
 
       const server = await bluetoothDevice.gatt.connect();
-      // bluetoothDevice.addEventListener()
 
       // //console.log("Getting Service...");
       const service = await server.getPrimaryService(myESP32ServiceUUID);
 
       // //console.log("Getting Characteristic...");
-      // weightSensorCharacteristic = await service.getCharacteristic(
-      //   weightSensorCharacteristicUUID
-      // );
       distanceEncoderSensorCharacteristic = await service.getCharacteristic(
         distanceEncoderSensorCharacteristicUUID
       );
@@ -198,10 +188,6 @@ export default function Singleplayer() {
       // await weightSensorCharacteristic.startNotifications();
       await distanceEncoderSensorCharacteristic.startNotifications();
       // //console.log("> Notifications started");
-      // weightSensorCharacteristic.addEventListener(
-      //   "characteristicvaluechanged",
-      //   handleWeightSensorNotifications
-      // );
       distanceEncoderSensorCharacteristic.addEventListener(
         "characteristicvaluechanged",
         handleDistanceEncoderSensorNotifications
@@ -224,46 +210,31 @@ export default function Singleplayer() {
   }
   async function disconnectToBluetoothDevice() {
     if (!navigator.bluetooth) {
-      alert(
-        "Caution: Web Bluetooth is disabled! Please go to chrome://flags and enable it."
-      );
       return;
     }
-    if (!isBluetoothConnected || bluetoothDeviceName === "Not connected") {
+    if (!isBluetoothConnected || bluetoothDeviceName === "Not connected"){
       return;
     }
-
     try {
-      // sendCommand(restartCommand);
-      // weightSensorCharacteristic.removeEventListener(
-      //   "characteristicvaluechanged",
-      //   handleWeightSensorNotifications
-      // );
       distanceEncoderSensorCharacteristic.removeEventListener(
         "characteristicvaluechanged",
         handleDistanceEncoderSensorNotifications
       );
-      // await weightSensorCharacteristic.stopNotifications();
       await distanceEncoderSensorCharacteristic.stopNotifications();
 
-      // resetAllValue();
       setDistanceEncoderSensorValue((0).toFixed(3));
 
       await bluetoothDevice.gatt.disconnect();
 
-      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
       setIsBluetoothConnected(false);
     } catch {
-      // sendCommand(restartCommand);
       setDistanceEncoderSensorValue((0).toFixed(3));
 
       // await bluetoothDevice.gatt.disconnect();
-
-      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
