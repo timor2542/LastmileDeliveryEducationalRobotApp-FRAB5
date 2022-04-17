@@ -162,7 +162,7 @@ export default function Multiplayer() {
   //   // }
   //   // await disconnectToBluetoothDeviceImmediately();
   //   // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    
+
   //   history.push("/");
   // }
   /* BACK BUTTON EVENT ON BROWNSER CODE END */
@@ -178,8 +178,7 @@ export default function Multiplayer() {
       if (isHost) {
         await db.ref("gameSessions/" + getPIN).remove();
       } else {
-        
-    await disconnectToBluetoothDeviceImmediately();
+        await disconnectToBluetoothDeviceImmediately();
         await db
           .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
           .remove();
@@ -198,8 +197,7 @@ export default function Multiplayer() {
       if (isHost) {
         await db.ref("gameSessions/" + getPIN).remove();
       } else {
-        
-    await disconnectToBluetoothDeviceImmediately();
+        await disconnectToBluetoothDeviceImmediately();
         await db
           .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
           .remove();
@@ -241,27 +239,11 @@ export default function Multiplayer() {
   useEffect(() => {
     window.addEventListener("beforeunload", onBeforeUnload);
     window.addEventListener("unload", afterUnload);
-    // if (getInClassRoom) {
-    //   if (isHost) {
-    // window.addEventListener("popstate", onBackButtonAdminEvent);
-    //   } else {
-        window.addEventListener("popstate", onBackButtonEvent);
-    //   }
-    // } else {
-      // window.addEventListener("popstate", onBackButtonEvent);
-    // }
+    window.addEventListener("popstate", onBackButtonEvent);
     return () => {
       window.removeEventListener("beforeunload", onBeforeUnload);
       window.removeEventListener("unload", afterUnload);
-      // if (getInClassRoom) {
-      //   if (isHost) {
-      // window.removeEventListener("popstate", onBackButtonAdminEvent);
-      //   } else {
-          // window.removeEventListener("popstate", onBackButtonEvent);
-      //   }
-      // } else {
-        window.removeEventListener("popstate", onBackButtonEvent);
-      // }
+      window.removeEventListener("popstate", onBackButtonEvent);
     };
   });
   /* DYNAMIC OF COMPONENT CODE END */
@@ -708,7 +690,7 @@ export default function Multiplayer() {
       let data = response.val();
       // showPopupLoading();
       if (data) {
-        checkRoomHostName();
+        await checkRoomHostName();
       } else {
         // resetStopwatch();
         await db.ref("gameSessions/" + generatedPin.toString()).set({
@@ -2295,26 +2277,25 @@ export default function Multiplayer() {
                     xs={6}
                   >
                     <Row xs={12}>
-                    {(!isUserFinished) ? 
-                      
-                      <div>
-                      {" "}
-                      {stopwatchElapsedTime.hoursElapsedTime} :{" "}
-                      {stopwatchElapsedTime.minutesElapsedTime < 10
-                        ? "0" + stopwatchElapsedTime.minutesElapsedTime
-                        : stopwatchElapsedTime.minutesElapsedTime}{" "}
-                      :{" "}
-                      {stopwatchElapsedTime.secondsElapsedTime < 10
-                        ? "0" + stopwatchElapsedTime.secondsElapsedTime
-                        : stopwatchElapsedTime.secondsElapsedTime}
-                      </div>
-                      :
+                      {!isUserFinished ? (
+                        <div>
+                          {" "}
+                          {stopwatchElapsedTime.hoursElapsedTime} :{" "}
+                          {stopwatchElapsedTime.minutesElapsedTime < 10
+                            ? "0" + stopwatchElapsedTime.minutesElapsedTime
+                            : stopwatchElapsedTime.minutesElapsedTime}{" "}
+                          :{" "}
+                          {stopwatchElapsedTime.secondsElapsedTime < 10
+                            ? "0" + stopwatchElapsedTime.secondsElapsedTime
+                            : stopwatchElapsedTime.secondsElapsedTime}
+                        </div>
+                      ) : (
                         <div>
                           {_hoursTimeFinishedRecord} :{" "}
                           {_minutesTimeFinishedRecord} :{" "}
                           {_secondsTimeFinishedRecord}
                         </div>
-                      }
+                      )}
                     </Row>
                   </Col>
                 </Row>
@@ -3276,26 +3257,25 @@ export default function Multiplayer() {
                     xs={6}
                   >
                     <Row xs={12}>
-                      {(!isUserFinished) ? 
-                      
-                      <div>
-                      {" "}
-                      {stopwatchElapsedTime.hoursElapsedTime} :{" "}
-                      {stopwatchElapsedTime.minutesElapsedTime < 10
-                        ? "0" + stopwatchElapsedTime.minutesElapsedTime
-                        : stopwatchElapsedTime.minutesElapsedTime}{" "}
-                      :{" "}
-                      {stopwatchElapsedTime.secondsElapsedTime < 10
-                        ? "0" + stopwatchElapsedTime.secondsElapsedTime
-                        : stopwatchElapsedTime.secondsElapsedTime}
-                      </div>
-                      :
+                      {!isUserFinished ? (
+                        <div>
+                          {" "}
+                          {stopwatchElapsedTime.hoursElapsedTime} :{" "}
+                          {stopwatchElapsedTime.minutesElapsedTime < 10
+                            ? "0" + stopwatchElapsedTime.minutesElapsedTime
+                            : stopwatchElapsedTime.minutesElapsedTime}{" "}
+                          :{" "}
+                          {stopwatchElapsedTime.secondsElapsedTime < 10
+                            ? "0" + stopwatchElapsedTime.secondsElapsedTime
+                            : stopwatchElapsedTime.secondsElapsedTime}
+                        </div>
+                      ) : (
                         <div>
                           {_hoursTimeFinishedRecord} :{" "}
                           {_minutesTimeFinishedRecord} :{" "}
                           {_secondsTimeFinishedRecord}
                         </div>
-                      }
+                      )}
                     </Row>
                   </Col>
                 </Row>
@@ -3911,11 +3891,16 @@ export default function Multiplayer() {
                           await db.ref("gameSessions/" + getPIN).remove();
                         } else {
                           await db
-                            .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+                            .ref(
+                              "gameSessions/" +
+                                getPIN +
+                                "/players/" +
+                                groupPlayerName
+                            )
                             .remove();
                         }
                       }
-                      history.push('/');
+                      history.push("/");
                     }}
                     style={{ width: "75%" }}
                   >
@@ -3976,7 +3961,12 @@ export default function Multiplayer() {
                             await db.ref("gameSessions/" + getPIN).remove();
                           } else {
                             await db
-                              .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
+                              .ref(
+                                "gameSessions/" +
+                                  getPIN +
+                                  "/players/" +
+                                  groupPlayerName
+                              )
                               .remove();
                           }
                         }
@@ -4050,7 +4040,7 @@ export default function Multiplayer() {
                     size="lg"
                     variant="danger"
                     onClick={async () => {
-                      await history.push('/');
+                      await history.push("/");
                     }}
                     style={{ width: "75%" }}
                   >
