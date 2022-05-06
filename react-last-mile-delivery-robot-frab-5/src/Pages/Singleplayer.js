@@ -16,7 +16,7 @@ import { useHistory } from "react-router-dom"; // include React Router DOM Libra
 import { Button, Col, Row } from "react-bootstrap";
 import { useMediaQuery } from "react-responsive";
 import { BiReset } from "react-icons/bi"; // include React Icons Library
-import { GiExitDoor} from "react-icons/gi"; // include React Icons Library
+import { GiExitDoor } from "react-icons/gi"; // include React Icons Library
 import {
   ImArrowDown,
   ImArrowLeft,
@@ -37,30 +37,32 @@ let commandCharacteristic = null; // Command Characteristic Global Variable
 
 /* EXPORT DEFAULT FUNCTION SINGLEPLAYER CODE BEGIN */
 export default function Singleplayer() {
-  
   // eslint-disable-next-line
-  const [version, setVersion] = useState("1.5.0");
-  
+  const [version, setVersion] = useState("1.10.0");
+
   /* CALL HISTORY BEGIN */
   const history = useHistory();
 
   /* CALL HISTORY END */
 
   /* BACK BUTTON EVENT ON BROWNSER CODE BEGIN */
-  async function onBackButtonEvent(event) {
+  function onBackButtonEvent(event) {
     event.preventDefault();
-    await disconnectToBluetoothDevice();
+    disconnectToBluetoothDevice();
+    // history.push("/");
+    history.goForward();
     history.push("/");
-  };
+  }
 
   /* BACK BUTTON EVENT ON BROWNSER CODE END */
 
   /* EXIT BUTTON EVENT ON SINGLEPLAYER UI CODE BEGIN */
-  async function onExitButtonEvent() {
+  function onExitButtonEvent() {
     // event.preventDefault();
-    await disconnectToBluetoothDevice();
+    disconnectToBluetoothDevice();
+    history.goForward();
     history.push("/");
-  };
+  }
 
   /* EXIT BUTTON EVENT ON SINGLEPLAYER UI CODE END */
 
@@ -135,7 +137,7 @@ export default function Singleplayer() {
   const [isDirectionButtonReleased, setIsDirectionButtonReleased] =
     useState(false);
 
-  async function onDisconnected(event) {
+  function onDisconnected() {
     setDistanceEncoderSensorValue((0).toFixed(3));
 
     // await bluetoothDevice.gatt.disconnect();
@@ -158,7 +160,7 @@ export default function Singleplayer() {
       setBluetoothDeviceName("Not connected");
       setIsBluetoothConnected(false);
       bluetoothDevice = await navigator.bluetooth.requestDevice({
-        filters: [{ namePrefix: "ESP32" }],
+        filters: [{ namePrefix: "EDUBOT" }],
         optionalServices: [
           myESP32ServiceUUID,
           // weightSensorCharacteristicUUID,
@@ -242,8 +244,7 @@ export default function Singleplayer() {
       setIsBluetoothConnected(false);
     }
   }
-  async function handleDistanceEncoderSensorNotifications(event) {
-    try {
+ function handleDistanceEncoderSensorNotifications(event) {
       let value = event.target.value;
       let result = 0;
       // Convert raw data bytes to hex values just for the sake of showing something.
@@ -255,7 +256,6 @@ export default function Singleplayer() {
       // setDistanceEncoderSensorValue(result);
       setDistanceEncoderSensorValue((result / 1000).toFixed(3));
       // setDistanceEncoderSensorValue((0.00329119230376073577362753116344*result).toFixed(1));
-    } catch {}
   }
 
   async function sendCommand(data) {
@@ -291,7 +291,9 @@ export default function Singleplayer() {
     setIsRightButtonPressed(true);
     setIsStopButtonPressed(true);
 
+    setDistanceEncoderSensorValue((0).toFixed(3));
     await sendCommand(0x56);
+    setDistanceEncoderSensorValue((0).toFixed(3));
 
     setIsUpButtonPressed(false);
     setIsDownButtonPressed(false);
@@ -299,6 +301,7 @@ export default function Singleplayer() {
     setIsRightButtonPressed(false);
     setIsStopButtonPressed(false);
   }
+
 
   /* BLUETOOTH LOW ENEGRY RELATED VARIABLES CODE END */
 
@@ -329,8 +332,8 @@ export default function Singleplayer() {
                     size="lg"
                     color="primary"
                     variant="outline-danger"
-                    onClick={async () => {
-                      await onExitButtonEvent();
+                    onClick={() => {
+                      onExitButtonEvent();
                     }}
                   >
                     <Row className="p-arrow-button text-align-center" xs={12}>
@@ -540,29 +543,16 @@ export default function Singleplayer() {
                   className="ph3 text-align-center text-white border border-white"
                   style={{
                     height: "100%",
-                    backgroundColor: "#000000",
+                    // backgroundColor: "#000000",
                     textAlign: "center",
                     wordBreak: "break-all",
                   }}
                   xs={6}
                 >
-                  Reset&nbsp;Distance
-                </Col>
-                <Col
-                  className="ph3 text-align-center text-white"
-                  style={{
-                    height: "100%",
-                    backgroundColor: "#FFFFFF",
-                    justifyContent: "right",
-                    alignItems: "center",
-                    wordBreak: "break-all",
-                  }}
-                  xs={3}
-                >
                   <Button
                     size="lg"
                     variant="outline-danger"
-                    onClick={async () => resetAllValue()}
+                    onClick={async () => await resetAllValue()}
                     disabled={
                       !isBluetoothConnected ||
                       isDownButtonPressed ||
@@ -578,6 +568,17 @@ export default function Singleplayer() {
                     </Row>
                   </Button>
                 </Col>
+                <Col
+                  className="ph3 text-align-center text-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#FFFFFF",
+                    justifyContent: "right",
+                    alignItems: "center",
+                    wordBreak: "break-all",
+                  }}
+                  xs={3}
+                ></Col>
               </Row>
               <Row
                 className=""
@@ -850,7 +851,9 @@ export default function Singleplayer() {
                       }}
                       xs={4}
                     >
-                      Singleplayer<br/>Mode
+                      Singleplayer
+                      <br />
+                      Mode
                     </Col>
                     <Col
                       // style={{
@@ -944,9 +947,9 @@ export default function Singleplayer() {
                     size="lg"
                     color="primary"
                     variant="outline-danger"
-                    onClick={async () => {
+                    onClick={() => {
                       // await sendCommand(restartCommand);
-                      await onExitButtonEvent();
+                      onExitButtonEvent();
                     }}
                     style={{ height: "100%", width: "25%" }}
                   >
@@ -973,7 +976,7 @@ export default function Singleplayer() {
                   }}
                   xs={12}
                 >
-                  Singleplayer Mode
+                  Singleplayer&nbsp;Mode
                 </Col>
               </Row>
               <Row
@@ -1451,27 +1454,14 @@ export default function Singleplayer() {
                   xs={3}
                 ></Col>
                 <Col
-                  className="p3 text-align-center text-white border border-white"
+                  className="p3 text-align-center text-white"
                   style={{
                     height: "100%",
-                    backgroundColor: "#000000",
+                    // backgroundColor: "#000000",
                     textAlign: "center",
                     wordBreak: "break-all",
                   }}
                   xs={6}
-                >
-                  Reset&nbsp;Distance
-                </Col>
-                <Col
-                  className="p3 text-align-center text-white"
-                  style={{
-                    height: "100%",
-                    backgroundColor: "#FFFFFF",
-                    justifyContent: "left",
-                    alignItems: "center",
-                    wordBreak: "break-all",
-                  }}
-                  xs={3}
                 >
                   <Button
                     size="lg"
@@ -1493,6 +1483,17 @@ export default function Singleplayer() {
                     </Row>
                   </Button>
                 </Col>
+                <Col
+                  className="p3 text-align-center text-white"
+                  style={{
+                    height: "100%",
+                    backgroundColor: "#FFFFFF",
+                    justifyContent: "left",
+                    alignItems: "center",
+                    wordBreak: "break-all",
+                  }}
+                  xs={3}
+                ></Col>
               </Row>
 
               <Row
@@ -1539,7 +1540,7 @@ export default function Singleplayer() {
                 <Col
                   style={{
                     display: "flex",
-                    height:"100%",
+                    height: "100%",
                     justifyContent: "right",
                     alignItems: "flex-start",
                     wordBreak: "break-all",

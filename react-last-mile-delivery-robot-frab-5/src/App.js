@@ -11,17 +11,15 @@
 
 import React from "react";             // include React Library
 import { BrowserRouter as Router, Route, Redirect } from "react-router-dom";      // include React Router DOM Library
-import { makeStyles } from "@material-ui/core/styles";
+import { makeStyles } from "@material-ui/styles";
 
 import Multiplayer from "./Pages/Multiplayer";
 import Homepage from "./Pages/Homepage";
 import Singleplayer from "./Pages/Singleplayer";
-// import SingleplayerNew from "./Pages/Singleplayer";
 
 import "./App.css";
 const useStyles = makeStyles({
   container: {
-    // display: "flex",
 
     /*
      *
@@ -57,10 +55,6 @@ export default function App() {
           path="/singleplayer"
           render={(props) => <Singleplayer {...props} />}
         />
-        {/* <Route
-          path="/singleplayernew"
-          render={(props) => <SingleplayerNew {...props} />}
-        /> */}
         <Route
           path="/multiplayer"
           render={(props) => <Multiplayer {...props} />}

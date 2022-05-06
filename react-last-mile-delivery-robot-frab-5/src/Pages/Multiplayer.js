@@ -11,19 +11,13 @@
 
 /* REACT LIBRARY TOPICS RELATED CODE BEGIN */
 
-import React, { useState, useEffect, useRef, useCallback } from "react"; // include React Library
+import React, { useState, useEffect, useLayoutEffect } from "react"; // include React Library
+import { useStateIfMounted } from "use-state-if-mounted";
 import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { Button, Col, Row, Form } from "react-bootstrap";
 import { useMediaQuery } from "react-responsive";
-import { FullScreen, useFullScreenHandle } from "react-full-screen";
-/* INCLUDE FORWARD REFERENCE TO ADD ICON ON MATERIAL TABLE CODE BEGIN */
-
-// import { BiReset } from "react-icons/bi";
-/* INCLUDE FORWARD REFERENCE TO ADD ICON ON MATERIAL TABLE CODE END */
 
 import { AiOutlineMenu } from "react-icons/ai"; // include React Icons Library
-// import { RiArrowGoBackFill } from "react-icons/ri";
-// import { BsArrowsFullscreen, BsFullscreenExit } from "react-icons/bs";
 import { FaHome, FaUsers } from "react-icons/fa"; // include React Icons Library
 import { GiExitDoor } from "react-icons/gi"; // include React Icons Library
 import {
@@ -46,27 +40,21 @@ import { SiStatuspal } from "react-icons/si";
 
 import DataGrid, {
   Column,
-  // Export,
   Editing,
-  Grouping,
-  GroupPanel,
-  // Paging,
-  SearchPanel,
-  Toolbar,
-  Item,
   Sorting,
-  Scrolling,
+  Export,
+  Pager,
+  Paging,
+  SearchPanel,
 } from "devextreme-react/data-grid";
-// import { employees } from "./datatest.js";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+
 import { Workbook } from "exceljs";
 import { saveAs } from "file-saver";
-import { Button as ButtonD } from "devextreme-react/button";
-import { exportDataGrid as exportDataGridPDF } from "devextreme/pdf_exporter";
-import { exportDataGrid as exportDataGridExcel } from "devextreme/excel_exporter";
+// Our demo infrastructure requires us to use 'file-saver-es'.
+// We recommend that you use the official 'file-saver' package in your applications.
+import { exportDataGrid } from "devextreme/excel_exporter";
+
 let bluetoothDevice = null; // Bluetooth Device Name Variable
-// let weightSensorCharacteristic = null; // Weight Sensor Characteristic Variable
 let distanceEncoderSensorCharacteristic = null; // Distance Encoder Sensor Characteristic Variable
 let commandCharacteristic = null; // Command Characteristic Variable
 
@@ -80,155 +68,52 @@ let _secondsTimeFinishedRecord = "00";
 
 /* EXPORT DEFAULT FUNCTION MULTIPLAYER CODE BEGIN */
 export default function Multiplayer() {
-  const handle = useFullScreenHandle();
-
   // eslint-disable-next-line
-  const [version, setVersion] = useState("1.5.0");
+  const [version, setVersion] = useStateIfMounted("1.10.0");
   /* CALL HISTORY CODE BEGIN */
   const history = useHistory();
-  const dataGridRef = useRef();
-
-  // eslint-disable-next-line
-  const exportGridPDF = useCallback(() => {
-    const doc = new jsPDF();
-    const dataGrid = dataGridRef.current.instance;
-
-    exportDataGridPDF({
-      jsPDFDocument: doc,
-      component: dataGrid,
-    }).then(() => {
-      doc.save(String(roomHostName) + "'s Result.pdf");
-    });
-  });
-  const exportGridExcel = (e) => {
-    const workbook = new Workbook();
-    const worksheet = workbook.addWorksheet("Main sheet");
-    const dataGrid = dataGridRef.current.instance;
-
-    exportDataGridExcel({
-      component: dataGrid,
-      worksheet,
-      autoFilterEnabled: true,
-    }).then(() => {
-      workbook.xlsx.writeBuffer().then((buffer) => {
-        saveAs(
-          new Blob([buffer], { type: "application/octet-stream" }),
-          String(roomHostName) + "'s Result.xlsx"
-        );
-      });
-    });
-    e.cancel = true;
-  };
-  // }
   /* CALL HISTORY CODE END */
 
   /* TABLE ICON ON LEADERBOARD CODE END */
 
   /* BACK BUTTON EVENT ON BROWNSER CODE BEGIN */
-  async function onBackButtonEvent(event) {
+  function onBackButtonEvent(event) {
     event.preventDefault();
-    // your logic
-    // window.alert("You go back")
-
-    // console.log("Back Button Detected.");
-    // if (getInClassRoom) {
-    //   // resetStopwatch();
-    //   if (isHost) {
-    //     await db.ref("gameSessions/" + getPIN).remove();
-    //   } else {
-    //     await db
-    //       .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-    //       .remove();
-    //   }
-    // }
-    // await disconnectToBluetoothDeviceImmediately();
-    // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    history.push("/");
+    setIsExit(true);
+    clearInterval(intervalId);
+    resetStopwatch();
+    clearInterval(intervalId);
+    resetStopwatch();
+    disconnectToBluetoothDeviceImmediately();
+    clearInterval(intervalId);
+    resetStopwatch();
+    db.ref("gameSessions/" + getPIN).remove();
   }
-  // async function onBackButtonAdminEvent(event) {
-  //   // event.preventDefault();
-  //   // your logic
-  //   // window.alert("You go back")
-  //   console.log("Back Button Admin Detected.");
-  //   // if (getInClassRoom) {
-  //   //   // resetStopwatch();
-  //   //   if (isHost) {
-  //   //     await db.ref("gameSessions/" + getPIN).remove();
-  //   //   } else {
-  //   //     await db
-  //   //       .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-  //   //       .remove();
-  //   //   }
-  //   // }
-  //   // await disconnectToBluetoothDeviceImmediately();
-  //   // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-
-  //   history.push("/");
-  // }
   /* BACK BUTTON EVENT ON BROWNSER CODE END */
 
-  /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE BEGIN */
-  async function onExitButtonEvent() {
-    // event.preventDefault();
-    // your logic
-    // console.log("Exit Button Detected.");
-    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    if (getInClassRoom) {
-      // resetStopwatch();
-      if (isHost) {
-        await db.ref("gameSessions/" + getPIN).remove();
-      } else {
-        await disconnectToBluetoothDeviceImmediately();
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .remove();
-      }
-    }
-    history.push("/");
-  }
-  async function onExitButtonAdminEvent() {
-    // event.preventDefault();
-    // your logic
-    // await disconnectToBluetoothDeviceImmediately();
-    // console.log("Exit Button Admin Detected.");
-    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    if (getInClassRoom) {
-      // resetStopwatch();
-      if (isHost) {
-        await db.ref("gameSessions/" + getPIN).remove();
-      } else {
-        await disconnectToBluetoothDeviceImmediately();
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .remove();
-      }
-    }
-    history.push("/");
-  }
   /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE END */
   /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE BEGIN */
-  const onBeforeUnload = async (event) => {
+  const onBeforeUnload = (event) => {
     // the method that will be used for both add and remove event
     event.preventDefault();
     let confirmationMessage = "";
     /* Do you small action code here */
     (event || window.event).returnValue = confirmationMessage; //Gecko + IE
-    await disconnectToBluetoothDeviceImmediately();
+    disconnectToBluetoothDeviceImmediately();
     return confirmationMessage;
   };
   /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE END */
   /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE CODE BEGIN */
-  const afterUnload = async () => {
-    // event.preventDefault();
-    await disconnectToBluetoothDeviceImmediately();
+  const afterUnload = () => {
+    disconnectToBluetoothDeviceImmediately();
     setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
     if (getInClassRoom) {
       if (isHost) {
-        await db.ref("gameSessions/" + getPIN).remove();
+        db.ref("gameSessions/" + getPIN).remove();
       } else {
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .remove();
+        db.ref(
+          "gameSessions/" + getPIN + "/players/" + groupPlayerName
+        ).remove();
       }
     }
     history.push("/");
@@ -278,7 +163,7 @@ export default function Multiplayer() {
 
   /* BLUETOOTH TOPICS RELATED CODE BEGIN */
   /* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE BEGIN */
-  const stability_delay = 1;
+  const stability_communicate_delay = 1;
   /* DELAY STABILITY IN MILLISECONDS TO SEND DATA TO BLUETOOTH DEVICE CODE END */
 
   /* BLUETOOTH LOW ENEGRY RELATED VARIABLES CODE BEGIN */
@@ -287,7 +172,7 @@ export default function Multiplayer() {
     useState("Not connected");
 
   const myESP32ServiceUUID = "818796aa-2f20-11ec-8d3d-0242ac130003";
-  // const weightSensorCharacteristicUUID = "818798d0-2f20-11ec-8d3d-0242ac130003";
+
   const distanceEncoderSensorCharacteristicUUID =
     "818799c0-2f20-11ec-8d3d-0242ac130003";
   const commandCharacteristicUUID = "81879be6-2f20-11ec-8d3d-0242ac130003";
@@ -297,7 +182,7 @@ export default function Multiplayer() {
   const spinRightCommand = 0x53;
   const backwardCommand = 0x51;
   const stopCommand = 0x54;
-  // const restartCommand = 0x55;
+
   const [distanceEncoderSensorValue, setDistanceEncoderSensorValue] = useState(
     (0).toFixed(3)
   );
@@ -310,26 +195,35 @@ export default function Multiplayer() {
   const [isDirectionButtonReleased, setIsDirectionButtonReleased] =
     useState(false);
 
+  const [isStartAdminButtonPressed, setIsStartAdminButtonPressed] =
+    useState(false);
+  const [isStopAdminButtonPressed, setIsStopAdminButtonPressed] =
+    useState(false);
+  const [isResetAdminButtonPressed, setIsResetAdminButtonPressed] =
+    useState(false);
+
   const [isUserFinished, setIsUserFinished] = useState(false);
   const [isUserAlreadyFinished, setIsUserAlreadyFinished] = useState(false);
 
-  const [isCloseResetTimerButton, setIsCloseResetTimerButton] = useState(true);
-
-  async function onDisconnected(event) {
+  const [isExit, setIsExit] = useState(false);
+  function onDisconnected() {
     setDistanceEncoderSensorValue((0).toFixed(3));
     distanceEncoderSensorCharacteristic = null;
     commandCharacteristic = null;
     bluetoothDevice = null;
     setBluetoothDeviceName("Not connected");
     setIsBluetoothConnected(false);
-    // if (!isHost && getInClassRoom && !gotAlreadyHostLeftDetected) {
-    //   await db
-    //     .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-    //     .update({
-    //       deviceName: "Not connected",
-    //       distanceSensorValue: parseFloat((0).toFixed(3)),
-    //       parcelCorrectCount: 0,
-    //     });
+    // if (
+    //   !isHost &&
+    //   getInClassRoom &&
+    //   !gotAlreadyHostLeftDetected &&
+    //   groupPlayerName.trim() !== ""
+    // ) {
+    //   db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
+    //     deviceName: "Not connected",
+    //     distanceSensorValue: parseFloat((0).toFixed(3)),
+    //     parcelCorrectCount: 0,
+    //   });
     // }
   }
 
@@ -344,7 +238,7 @@ export default function Multiplayer() {
       setBluetoothDeviceName("Not connected");
       setIsBluetoothConnected(false);
       bluetoothDevice = await navigator.bluetooth.requestDevice({
-        filters: [{ namePrefix: "ESP32" }],
+        filters: [{ namePrefix: "EDUBOT" }],
         optionalServices: [
           myESP32ServiceUUID,
           distanceEncoderSensorCharacteristicUUID,
@@ -377,10 +271,6 @@ export default function Multiplayer() {
       // await weightSensorCharacteristic.startNotifications();
       await distanceEncoderSensorCharacteristic.startNotifications();
       // ////console.log("> Notifications started");
-      // weightSensorCharacteristic.addEventListener(
-      //   "characteristicvaluechanged",
-      //   handleWeightSensorNotifications
-      // );
       distanceEncoderSensorCharacteristic.addEventListener(
         "characteristicvaluechanged",
         handleDistanceEncoderSensorNotifications
@@ -388,7 +278,12 @@ export default function Multiplayer() {
       setBluetoothDeviceName(bluetoothDevice.name);
 
       // console.log(bluetoothDevice.name);
-      if (getInClassRoom && groupPlayerName.trim() !== "") {
+      if (
+        !isHost &&
+        getInClassRoom &&
+        !gotAlreadyHostLeftDetected &&
+        groupPlayerName.trim() !== ""
+      ) {
         await db
           .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
           .update({
@@ -397,18 +292,21 @@ export default function Multiplayer() {
           });
       }
       setIsBluetoothConnected(true);
-      // sendCommand(0x57);
     } catch {
       setDistanceEncoderSensorValue((0).toFixed(3));
 
       // await bluetoothDevice.gatt.disconnect();
 
-      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
-      if (getInClassRoom && groupPlayerName.trim() !== "") {
+      if (
+        !isHost &&
+        getInClassRoom &&
+        !gotAlreadyHostLeftDetected &&
+        groupPlayerName.trim() !== ""
+      ) {
         await db
           .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
           .update({
@@ -429,30 +327,26 @@ export default function Multiplayer() {
     }
 
     try {
-      // sendCommand(restartCommand);
-      // weightSensorCharacteristic.removeEventListener(
-      //   "characteristicvaluechanged",
-      //   handleWeightSensorNotifications
-      // );
       distanceEncoderSensorCharacteristic.removeEventListener(
         "characteristicvaluechanged",
         handleDistanceEncoderSensorNotifications
       );
-      // await weightSensorCharacteristic.stopNotifications();
       await distanceEncoderSensorCharacteristic.stopNotifications();
-      // sendCommand(0x56);
-      // resetAllValue();
 
       setDistanceEncoderSensorValue((0).toFixed(3));
 
       await bluetoothDevice.gatt.disconnect();
 
-      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
-      if (getInClassRoom && !gotAlreadyHostLeftDetected) {
+      if (
+        !isHost &&
+        getInClassRoom &&
+        !gotAlreadyHostLeftDetected &&
+        groupPlayerName.trim() !== ""
+      ) {
         await db
           .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
           .update({
@@ -465,14 +359,16 @@ export default function Multiplayer() {
     } catch {
       setDistanceEncoderSensorValue((0).toFixed(3));
 
-      // await bluetoothDevice.gatt.disconnect();
-
-      // weightSensorCharacteristic = null;
       distanceEncoderSensorCharacteristic = null;
       commandCharacteristic = null;
       bluetoothDevice = null;
       setBluetoothDeviceName("Not connected");
-      if (getInClassRoom && !gotAlreadyHostLeftDetected) {
+      if (
+        !isHost &&
+        getInClassRoom &&
+        !gotAlreadyHostLeftDetected &&
+        groupPlayerName.trim() !== ""
+      ) {
         await db
           .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
           .update({
@@ -515,26 +411,27 @@ export default function Multiplayer() {
       setIsBluetoothConnected(false);
     }
   }
-  async function handleDistanceEncoderSensorNotifications(event) {
-    try {
-      let value = event.target.value;
-      let result = 0;
-      // Convert raw data bytes to hex values just for the sake of showing something.
-      // In the "real" world, you'd use data.getUint8, data.getUint16 or even
-      // TextDecoder to process raw data bytes.
-      for (let i = 0; i < value.byteLength; i++) {
-        result += value.getUint8(i) << (8 * i);
-      }
-      // setDistanceEncoderSensorValue(result);
-      setDistanceEncoderSensorValue((result / 1000).toFixed(3));
-      if (getInClassRoom && groupPlayerName.trim() !== "") {
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .update({
-            distanceSensorValue: parseFloat((result / 1000).toFixed(3)),
-          });
-      }
-    } catch {}
+  function handleDistanceEncoderSensorNotifications(event) {
+    let value = event.target.value;
+    let result = 0;
+    // Convert raw data bytes to hex values just for the sake of showing something.
+    // In the "real" world, you'd use data.getUint8, data.getUint16 or even
+    // TextDecoder to process raw data bytes.
+    for (let i = 0; i < value.byteLength; i++) {
+      result += value.getUint8(i) << (8 * i);
+    }
+    // setDistanceEncoderSensorValue(result);
+    setDistanceEncoderSensorValue((result / 1000).toFixed(3));
+    if (
+      !isHost &&
+      getInClassRoom &&
+      !gotAlreadyHostLeftDetected &&
+      groupPlayerName.trim() !== ""
+    ) {
+      db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
+        distanceSensorValue: parseFloat((result / 1000).toFixed(3)),
+      });
+    }
   }
   async function sendCommand(data) {
     if (!isBluetoothConnected || bluetoothDeviceName === "Not connected") {
@@ -571,6 +468,8 @@ export default function Multiplayer() {
 
     await sendCommand(0x56);
 
+    setDistanceEncoderSensorValue((0).toFixed(3));
+
     setIsUpButtonPressed(false);
     setIsDownButtonPressed(false);
     setIsLeftButtonPressed(false);
@@ -578,11 +477,26 @@ export default function Multiplayer() {
     setIsStopButtonPressed(false);
   }
 
-  /* BLUETOOTH LOW ENEGRY RELATED VARIABLES CODE END */
+  /* BLUETOOTH LOW ENEGRY RELATED VARIABL
+   END */
 
   const isPortrait = useMediaQuery({ query: "(orientation: portrait)" }); // Check responsive.
 
   /* SESSION PLAYER LOGIN CODE BEGIN */
+
+  // const [sortColumn, setSortColumn] = useState(null);
+  // const [sortDirection, setSortDirection] = useState(null);
+  // const [rows, setRows] = useState([]);
+
+  // const playerColumns = [
+  //   { key: 'groupName', name: 'Group Name', sortable:true, },
+  //   { key: 'deviceName', name: 'Robot Name', sortable:true,  },
+  //   { key: 'isFinishedMission', name: 'Finished', sortable:true, sortDescendingFirst:true,  },
+  //   { key: 'parcelCorrectCount', name: 'Parcel Count', sortable:true, sortDescendingFirst:true,  editor: TextEditor },
+  //   { key: 'distanceSensorValue', name: 'Distance (m.)', sortable:true, },
+  //   { key: 'timeFinishedRecord', name: 'Recorded Time', sortable:true,  },
+
+  // ];
 
   const [PIN, setPIN] = useState("");
   const [getPIN, setGetPIN] = useState("");
@@ -601,19 +515,19 @@ export default function Multiplayer() {
 
   const [playersData, setPlayersData] = useState([]);
 
-  async function JoinSession() {
+  function JoinSession() {
     setIsHost(false);
     setGetInClassRoom(false);
     setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    async function onSuccess(response) {
+    function onSuccess(response) {
       let data = response.val();
       if (data) {
-        if (data.gameAlreadyStarted) {
-          setFSMPage("MULTIPLAYER_MODE_ERRORGAMEALREADYSTARTEDPAGE");
-        } else {
-          setGetPIN(PIN);
-          setFSMPage("MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE");
-        }
+        // if (data.gameAlreadyStarted) {
+        //   setFSMPage("MULTIPLAYER_MODE_ERRORGAMEALREADYSTARTEDPAGE");
+        // } else {
+        setGetPIN(PIN);
+        setFSMPage("MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE");
+        // }
         setGetInClassRoom(true);
       } else {
         setGetInClassRoom(false);
@@ -630,30 +544,29 @@ export default function Multiplayer() {
       setFSMPage("MULTIPLAYER_MODE_ERRORNEEDPINPAGE");
     }
   }
-  async function checkGroupPlayerName() {
+  function checkGroupPlayerName() {
     let nextStepGet = false;
-    async function onSuccessHost(response) {
-      let data = response.val();
-      if (data.gameAlreadyStarted) {
-        setFSMPage("MULTIPLAYER_MODE_ERRORGAMEALREADYSTARTEDPAGE");
-      } else {
-        nextStepGet = true;
-      }
+    function onSuccessHost() {
+      // let data = response.val();
+      // if (data.gameAlreadyStarted) {
+      //   setFSMPage("MULTIPLAYER_MODE_ERRORGAMEALREADYSTARTEDPAGE");
+      // } else {
+      nextStepGet = true;
+      // }
     }
-    async function onSuccessPlayer(response) {
+    function onSuccessPlayer(response) {
       let data = response.val();
       if (data) {
         setFSMPage("MULTIPLAYER_MODE_ERRORPLAYERNAMETAKEN_PAGE");
       } else {
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .set({
-            groupName: groupPlayerName,
-            deviceName: "Not connected",
-            parcelCorrectCount: 0,
-            distanceSensorValue: parseFloat((0).toFixed(3)),
-            timeFinishedRecord: "0 : 00 : 00",
-          });
+        db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).set({
+          groupName: groupPlayerName,
+          deviceName: "Not connected",
+          parcelCorrectCount: 0,
+          distanceSensorValue: parseFloat((0).toFixed(3)),
+          timeFinishedRecord: "0 : 00 : 00",
+          isFinishedMission: "Not yet",
+        });
         // resetStopwatch();
         setFSMPage("MULTIPLAYER_MODE_PLAYER_CONTROLPANEL_PAGE");
 
@@ -678,23 +591,22 @@ export default function Multiplayer() {
       setFSMPage("MULTIPLAYER_MODE_ERRORNEEDGROUPNAMEPLAYERPAGE");
     }
   }
-  async function CreateSession() {
+  function CreateSession() {
     setIsHost(true);
     setFSMPage("MULTIPLAYER_MODE_HOST_FILLROOMNAME_PAGE");
   }
-  async function checkRoomHostName() {
-    let generatedPin =
-      Math.floor(Math.random() * (9999999 - 100000 + 1)) + 100000;
+  function checkRoomHostName() {
+    let generatedPin = Math.floor(Math.random() * (9999 - 100 + 1)) + 100;
     setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    async function onSuccess(response) {
+    function onSuccess(response) {
       let data = response.val();
       // showPopupLoading();
       if (data) {
-        await checkRoomHostName();
+        checkRoomHostName();
       } else {
         // resetStopwatch();
-        await db.ref("gameSessions/" + generatedPin.toString()).set({
-          gameAlreadyStarted: false,
+        db.ref("gameSessions/" + generatedPin.toString()).set({
+          // gameAlreadyStarted: false,
           gameStarted: false,
           timeIsActived: false,
           timeIsPaused: false,
@@ -756,7 +668,7 @@ export default function Multiplayer() {
     minutesElapsedTime: 0,
     hoursElapsedTime: 0,
   });
-  async function resetStopwatch() {
+  function resetStopwatch() {
     setTimeIsActive(false);
     setTimeIsPaused(false);
     elapsedTime = 0;
@@ -771,89 +683,69 @@ export default function Multiplayer() {
   }
 
   //method to start the stopwatch
-  async function startStopwatch() {
+  function startStopwatch() {
     setTimeIsActive(true);
-    setTimeIsPaused(true);
-    startTime = Date.now();
-    //run setInterval() and save id
-    intervalId = setInterval(async function () {
-      //calculate elapsed time
-      const time = Date.now() - startTime + elapsedTime;
-
-      //calculate different time measurements based on elapsed time
-      const milliseconds = parseInt((time % 1000) / 10);
-      const seconds = parseInt((time / 1000) % 60);
-      const minutes = parseInt((time / (1000 * 60)) % 60);
-      const hours = parseInt((time / (1000 * 60 * 60)) % 24);
-
-      setStopwatchElapsedTime({
-        millisecondsElapsedTime: milliseconds,
-        secondsElapsedTime: seconds,
-        minutesElapsedTime: minutes,
-        hoursElapsedTime: hours,
-      });
-      let hours_str = String(hours);
-      let minutes_str = "00";
-      let seconds_str = "00";
-      if (minutes < 10) {
-        minutes_str = "0" + String(minutes);
-      } else {
-        minutes_str = String(minutes);
-      }
-
-      if (seconds < 10) {
-        seconds_str = "0" + String(seconds);
-      } else {
-        seconds_str = String(seconds);
-      }
-      if (getInClassRoom) {
-        await db.ref("gameSessions/" + getPIN).update({
-          timeHours: hours_str,
-          timeMinutes: minutes_str,
-          timeSeconds: seconds_str,
-        });
-      }
-    }, 1);
-  }
-  async function stopStopwatch() {
     setTimeIsPaused(false);
+    startTime = Date.now();
+  }
+  function stopStopwatch() {
+    setTimeIsPaused(true);
     elapsedTime += Date.now() - startTime;
     clearInterval(intervalId);
-    // _hoursTimeFinishedRecord = String(stopwatchElapsedTime.hoursElapsedTime);
-    // if (stopwatchElapsedTime.minutesElapsedTime < 10) {
-    //   _minutesTimeFinishedRecord =
-    //     "0" + String(stopwatchElapsedTime.minutesElapsedTime);
-    // } else {
-    //   _minutesTimeFinishedRecord = String(
-    //     stopwatchElapsedTime.minutesElapsedTime
-    //   );
-    // }
-    // if (stopwatchElapsedTime.secondsElapsedTime < 10) {
-    //   _secondsTimeFinishedRecord =
-    //     "0" + String(stopwatchElapsedTime.secondsElapsedTime);
-    // } else {
-    //   _secondsTimeFinishedRecord = String(
-    //     stopwatchElapsedTime.secondsElapsedTime
-    //   );
-    // }
-    // if (getInClassRoom && groupPlayerName.trim() !== "") {
-    //   await db
-    //     .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-    //     .update({
-    //       timeFinishedRecord:
-    //         _hoursTimeFinishedRecord +
-    //         " : " +
-    //         _minutesTimeFinishedRecord +
-    //         " : " +
-    //         _secondsTimeFinishedRecord,
-    //     });
-    // }
   }
+
+  useEffect(() => {
+    if (timeIsActive && !timeIsPaused) {
+      intervalId = setInterval(function () {
+        //calculate elapsed time
+        const time = Date.now() - startTime + elapsedTime;
+
+        //calculate different time measurements based on elapsed time
+        const milliseconds = parseInt((time % 1000) / 10);
+        const seconds = parseInt((time / 1000) % 60);
+        const minutes = parseInt((time / (1000 * 60)) % 60);
+        const hours = parseInt((time / (1000 * 60 * 60)) % 24);
+
+        setStopwatchElapsedTime({
+          millisecondsElapsedTime: milliseconds,
+          secondsElapsedTime: seconds,
+          minutesElapsedTime: minutes,
+          hoursElapsedTime: hours,
+        });
+        let hours_str = String(hours);
+        let minutes_str = "00";
+        let seconds_str = "00";
+        if (minutes < 10) {
+          minutes_str = "0" + String(minutes);
+        } else {
+          minutes_str = String(minutes);
+        }
+
+        if (seconds < 10) {
+          seconds_str = "0" + String(seconds);
+        } else {
+          seconds_str = String(seconds);
+        }
+        if (isHost && getInClassRoom) {
+          db.ref("gameSessions/" + getPIN).update({
+            timeHours: hours_str,
+            timeMinutes: minutes_str,
+            timeSeconds: seconds_str,
+          });
+        }
+      }, 10);
+    } else {
+      clearInterval(intervalId);
+    }
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [getInClassRoom, getPIN, isHost, timeIsActive, timeIsPaused]);
 
   /* STOPWATCH TIMER CONTROL CODE END */
   /* FETCHING DATA ON FIREBASE CONTROL CODE BEGIN */
   let fetchData = () => {
-    async function onSuccess(response) {
+    function onSuccess(response) {
       let data = response.val();
       // console.log(data);
       if (data) {
@@ -949,6 +841,7 @@ export default function Multiplayer() {
               };
             });
             setPlayersData(leaderboardArray);
+            // console.log(leaderboardArray);
           } else if (!data.players && data.hostOnline) {
             setPlayersData([]);
           } else {
@@ -1001,7 +894,7 @@ export default function Multiplayer() {
     }
   };
   // eslint-disable-next-line
-  useEffect(fetchData, [getInClassRoom, getPIN]);
+  useLayoutEffect(fetchData, [getInClassRoom, getPIN]);
   // ////console.log(gameData);
 
   /* PORTRAIT RELATED CODE BEGIN */
@@ -1014,7 +907,7 @@ export default function Multiplayer() {
     }
     setGotStart(false);
   }
-  async function TimeFinishedRecord() {
+  function TimeFinishedRecord() {
     _hoursTimeFinishedRecord = String(stopwatchElapsedTime.hoursElapsedTime);
     if (stopwatchElapsedTime.minutesElapsedTime < 10) {
       _minutesTimeFinishedRecord =
@@ -1032,17 +925,20 @@ export default function Multiplayer() {
         stopwatchElapsedTime.secondsElapsedTime
       );
     }
-    if (getInClassRoom && groupPlayerName.trim() !== "") {
-      await db
-        .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-        .update({
-          timeFinishedRecord:
-            _hoursTimeFinishedRecord +
-            " : " +
-            _minutesTimeFinishedRecord +
-            " : " +
-            _secondsTimeFinishedRecord,
-        });
+    if (
+      !isHost &&
+      getInClassRoom &&
+      !gotAlreadyHostLeftDetected &&
+      groupPlayerName.trim() !== ""
+    ) {
+      db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
+        timeFinishedRecord:
+          _hoursTimeFinishedRecord +
+          " : " +
+          _minutesTimeFinishedRecord +
+          " : " +
+          _secondsTimeFinishedRecord,
+      });
     }
   }
   if (gotStop && !isUserFinished) {
@@ -1064,11 +960,18 @@ export default function Multiplayer() {
       setIsUserFinished(false);
       setIsUserAlreadyFinished(false);
 
-      if (getInClassRoom && groupPlayerName.trim() !== "") {
+      if (
+        !isHost &&
+        getInClassRoom &&
+        !gotAlreadyHostLeftDetected &&
+        groupPlayerName.trim() !== ""
+      ) {
         db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
           {
             timeFinishedRecord: "0 : 00 : 00",
             parcelCorrectCount: 0,
+            distanceSensorValue: parseFloat((0).toFixed(3)),
+            isFinishedMission: "Not yet",
           }
         );
       }
@@ -1080,6 +983,9 @@ export default function Multiplayer() {
       setIsUserAlreadyFinished(true);
       // stopStopwatch();
       TimeFinishedRecord();
+      db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
+        isFinishedMission: "OK",
+      });
       sendCommand(stopCommand);
     }
   }
@@ -1102,136 +1008,261 @@ export default function Multiplayer() {
   }
   /* PORTRAIT RELATED CODE END */
   /* BACK BUTTON DETECTION TO REMOVE DATA IN FIREBASE CODE BEGIN */
-  useEffect(() => {
-    // eslint-disable-next-line
-    history.block(async () => {
-      if (getInClassRoom) {
-        // resetStopwatch();
-        if (isHost) {
-          await db.ref("gameSessions/" + getPIN).remove();
-        } else {
-          await disconnectToBluetoothDeviceImmediately();
-          await db
-            .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-            .remove();
-        }
+  // useEffect(() => {
+  // eslint-disable-next-line
+  history.block(() => {
+    setIsExit(true);
+    clearInterval(intervalId);
+    resetStopwatch();
+    if (getInClassRoom) {
+      // resetStopwatch();
+      if (isHost) {
+        db.ref("gameSessions/" + getPIN).remove();
+      } else {
+        disconnectToBluetoothDeviceImmediately();
+        db.ref(
+          "gameSessions/" + getPIN + "/players/" + groupPlayerName
+        ).remove();
       }
-      // history.push('/');
-    });
+    }
+    history.goForward();
   });
+  // });
   /* BACK BUTTON DETECTION TO REMOVE DATA IN FIREBASE CODE END */
 
   /* FETCHING DATA ON FIREBASE CONTROL CODE END */
-  // const [editRowKey, setEditRowKey] = useState(null);
-
-  const onChangesChange = useCallback(
-    async (changes) => {
-      //  await db
-      //       .ref("gameSessions/" + getPIN + "/players/" + editRowKey)
-      //       .remove();
-      //     }
-      if (changes.length > 0) {
-        // console.log(changes[0].key)
-        // console.log(changes[0].data)
-        if (getInClassRoom) {
-          await db
-            .ref("gameSessions/" + getPIN + "/players/" + changes[0].key)
-            .update({
-              parcelCorrectCount: changes[0].data.parcelCorrectCount,
-            });
-        }
-      }
-    },
-    [getInClassRoom, getPIN]
-  );
-
-  // const onEditRowKeyChange = React.useCallback((editRowKey) => {
-  //   console.log(editRowKey);
-  // }, []);
-
   /* FINITE STATE MACHINE PAGE CODE BEGIN */
 
   if (FSMPage === "MULTIPLAYER_MODE_HOMEPAGE") {
     return (
-      <FullScreen handle={handle}>
-        <div
-          className="vw-100 vh-100 mx-0"
-          style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
-        >
-          {isPortrait ? (
-            <Row className="vw-100 vh-100 p-1 mx-0">
-              <Row className="p-3 mx-0" xs={12}>
-                <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
-                  <Row
-                    className="p-1"
-                    style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+      <div
+        className="vw-100 vh-100 mx-0"
+        style={{ fontSize: "12px", backgroundColor: "#F7F6E7" }}
+      >
+        {isPortrait ? (
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="p-1"
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    style={{
+                      height: "100%",
+                      justifyContent: "left",
+                      alignItems: "center",
+                      textAlign: "left",
+                    }}
+                    xs={3}
                   >
-                    <Col
-                      style={{
-                        height: "100%",
-                        justifyContent: "left",
-                        alignItems: "center",
-                        textAlign: "left",
+                    <Button
+                      size="lg"
+                      color="primary"
+                      variant="outline-danger"
+                      onClick={() => {
+                        // onExitButtonEvent();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        disconnectToBluetoothDeviceImmediately();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        history.goForward();
+                        history.push("/");
                       }}
-                      xs={3}
                     >
-                      <Button
-                        size="lg"
-                        color="primary"
-                        variant="outline-danger"
-                        onClick={async () => {
-                          await onExitButtonEvent();
-                        }}
-                      >
-                        <Row
-                          className="p-arrow-button text-align-center"
-                          xs={12}
-                        >
-                          <GiExitDoor />
-                        </Row>
-                      </Button>
-                    </Col>
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <GiExitDoor />
+                      </Row>
+                    </Button>
+                  </Col>
+                </Row>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+                <Row
+                  className="ph7 p-bold p-1 mx-0 "
+                  style={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    textAlign: "center",
+                    height: "70%",
+                    backgroundColor: "#E7E6E1",
+                  }}
+                  xs={12}
+                >
+                  <Row
+                    className="ph7 text-align-center p-bold"
+                    style={{ height: "10%" }}
+                  >
+                    Player
                   </Row>
                   <Row
-                    className="lastmilelogo p-3 mx-0"
-                    style={{ height: "10%", backgroundColor: "#FFFFFF" }}
-                    xs={12}
-                  ></Row>
+                    className="ph4 text-align-center"
+                    style={{ height: "5%" }}
+                  >
+                    Join an activity with a PIN provided by the host.
+                  </Row>
                   <Row
-                    className="ph7 p-bold p-1 mx-0 "
-                    style={{
-                      justifyContent: "center",
-                      alignItems: "center",
-                      textAlign: "center",
-                      height: "70%",
-                      backgroundColor: "#E7E6E1",
-                    }}
-                    xs={12}
+                    className="ph text-align-center"
+                    style={{ height: "10%" }}
                   >
                     <Row
-                      className="ph7 text-align-center p-bold"
-                      style={{ height: "10%" }}
+                      className="ph text-align-center"
+                      style={{ width: "80%", height: "100%" }}
+                    >
+                      <Form>
+                        <Form.Group>
+                          <Form.Control
+                            size="md"
+                            placeholder="Game PIN"
+                            variant="outlined"
+                            value={PIN}
+                            type="number"
+                            onKeyPress={(event) => {
+                              if (event.key === "Enter") event.preventDefault();
+                              // await JoinSession();
+                            }}
+                            onChange={(event) => setPIN(event.target.value)}
+                          />
+                        </Form.Group>
+                      </Form>
+                    </Row>
+                  </Row>
+                  <Row
+                    className="ph4 text-align-center"
+                    style={{ width: "75%", height: "10%" }}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      onClick={() => {
+                        JoinSession();
+                      }}
+                    >
+                      <Row className="ph3 text-align-center" xs={12}>
+                        Join Session
+                      </Row>
+                    </Button>
+                  </Row>
+                  <Row
+                    className="ph7 text-align-center p-bold "
+                    style={{ height: "10%" }}
+                  >
+                    Host
+                  </Row>
+                  <Row
+                    className="ph4 text-align-center"
+                    style={{ height: "5%" }}
+                  >
+                    Host a live game or share a game with remote players.
+                  </Row>
+                  <Row
+                    className="ph7 text-align-center"
+                    style={{ width: "75%", height: "10%" }}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      onClick={() => {
+                        CreateSession();
+                      }}
+                    >
+                      <Row className="ph3 text-align-center" xs={12}>
+                        Create Session
+                      </Row>
+                    </Button>
+                  </Row>
+                </Row>
+                <Row
+                  className="ph4 text-align-center p-1 mx-0"
+                  style={{ height: "10%" }}
+                  xs={12}
+                >
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
+                </Row>
+              </Col>
+            </Row>
+          </Row>
+        ) : (
+          <Row className="vw-100 vh-100 p-1 mx-0">
+            <Row className="p-3 mx-0" xs={12}>
+              <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
+                <Row
+                  className="p-1"
+                  style={{ height: "10%", backgroundColor: "#FFFFFF" }}
+                >
+                  <Col
+                    style={{
+                      height: "100%",
+                      justifyContent: "left",
+                      alignItems: "center",
+                      textAlign: "left",
+                    }}
+                    xs={3}
+                  >
+                    <Button
+                      size="lg"
+                      color="primary"
+                      variant="outline-danger"
+                      onClick={() => {
+                        // onExitButtonEvent();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        disconnectToBluetoothDeviceImmediately();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        history.goForward();
+                        history.push("/");
+                      }}
+                    >
+                      <Row className="p-arrow-button text-align-center" xs={12}>
+                        <GiExitDoor />
+                      </Row>
+                    </Button>
+                  </Col>
+                </Row>
+                <Row
+                  className="lastmilelogo p-3 mx-0"
+                  style={{ height: "20%", backgroundColor: "#FFFFFF" }}
+                  xs={12}
+                ></Row>
+                <Row
+                  className="p7 p-bold p-1 mx-0 "
+                  style={{ height: "60%", backgroundColor: "#E7E6E1" }}
+                  xs={12}
+                >
+                  <Col
+                    className="p7"
+                    style={{ backgroundColor: "#E7E6E1" }}
+                    xs={6}
+                  >
+                    <Row
+                      className="p7 text-align-center p-bold p-1 mx-0"
+                      style={{ height: "20%" }}
                     >
                       Player
                     </Row>
                     <Row
-                      className="ph4 text-align-center"
-                      style={{ height: "5%" }}
+                      className="p4 text-align-center"
+                      style={{ height: "10%" }}
                     >
                       Join an activity with a PIN provided by the host.
                     </Row>
                     <Row
-                      className="ph text-align-center"
-                      style={{ height: "10%" }}
+                      className="p text-align-center"
+                      style={{ height: "30%" }}
                     >
                       <Row
-                        className="ph text-align-center"
+                        className="p text-align-center"
                         style={{ width: "80%", height: "100%" }}
                       >
                         <Form>
                           <Form.Group>
                             <Form.Control
-                              size="md"
+                              size="lg"
                               placeholder="Game PIN"
                               variant="outlined"
                               value={PIN}
@@ -1241,228 +1272,86 @@ export default function Multiplayer() {
                                   event.preventDefault();
                                 // await JoinSession();
                               }}
-                              onChange={(event) => setPIN(event.target.value)}
+                              onChange={(event) => {
+                                let value = event.target.value;
+                                value = value.replace(/[^0-9]*$/, "");
+                                setPIN(value);
+                              }}
                             />
                           </Form.Group>
                         </Form>
                       </Row>
                     </Row>
                     <Row
-                      className="ph4 text-align-center"
-                      style={{ width: "75%", height: "10%" }}
+                      className="p4 text-align-center"
+                      style={{ height: "20%" }}
                     >
-                      <Button
-                        size="lg"
-                        color="primary"
-                        onClick={async () => {
-                          await JoinSession();
-                        }}
-                      >
-                        <Row className="ph3 text-align-center" xs={12}>
-                          Join Session
-                        </Row>
-                      </Button>
-                    </Row>
-                    <Row
-                      className="ph7 text-align-center p-bold "
-                      style={{ height: "10%" }}
-                    >
-                      Host
-                    </Row>
-                    <Row
-                      className="ph4 text-align-center"
-                      style={{ height: "5%" }}
-                    >
-                      Host a live game or share a game with remote players.
-                    </Row>
-                    <Row
-                      className="ph7 text-align-center"
-                      style={{ width: "75%", height: "10%" }}
-                    >
-                      <Button
-                        size="lg"
-                        color="primary"
-                        onClick={async () => {
-                          CreateSession();
-                        }}
-                      >
-                        <Row className="ph3 text-align-center" xs={12}>
-                          Create Session
-                        </Row>
-                      </Button>
-                    </Row>
-                  </Row>
-                  <Row
-                    className="ph4 text-align-center p-1 mx-0"
-                    style={{ height: "10%" }}
-                    xs={12}
-                  >
-                    Version {version} | © {new Date().getFullYear()} FRAB5
-                    Thesis.
-                  </Row>
-                </Col>
-              </Row>
-            </Row>
-          ) : (
-            <Row className="vw-100 vh-100 p-1 mx-0">
-              <Row className="p-3 mx-0" xs={12}>
-                <Col style={{ backgroundColor: "#FFFFFF" }} xs={12}>
-                  <Row
-                    className="p-1"
-                    style={{ height: "10%", backgroundColor: "#FFFFFF" }}
-                  >
-                    <Col
-                      style={{
-                        height: "100%",
-                        justifyContent: "left",
-                        alignItems: "center",
-                        textAlign: "left",
-                      }}
-                      xs={3}
-                    >
-                      <Button
-                        size="lg"
-                        color="primary"
-                        variant="outline-danger"
-                        onClick={async () => {
-                          await onExitButtonEvent();
-                        }}
-                      >
-                        <Row
-                          className="p-arrow-button text-align-center"
-                          xs={12}
-                        >
-                          <GiExitDoor />
-                        </Row>
-                      </Button>
-                    </Col>
-                  </Row>
-                  <Row
-                    className="lastmilelogo p-3 mx-0"
-                    style={{ height: "20%", backgroundColor: "#FFFFFF" }}
-                    xs={12}
-                  ></Row>
-                  <Row
-                    className="p7 p-bold p-1 mx-0 "
-                    style={{ height: "60%", backgroundColor: "#E7E6E1" }}
-                    xs={12}
-                  >
-                    <Col
-                      className="p7"
-                      style={{ backgroundColor: "#E7E6E1" }}
-                      xs={6}
-                    >
-                      <Row
-                        className="p7 text-align-center p-bold p-1 mx-0"
-                        style={{ height: "20%" }}
-                      >
-                        Player
-                      </Row>
                       <Row
                         className="p4 text-align-center"
-                        style={{ height: "10%" }}
-                      >
-                        Join an activity with a PIN provided by the host.
-                      </Row>
-                      <Row
-                        className="p text-align-center"
-                        style={{ height: "30%" }}
-                      >
-                        <Row
-                          className="p text-align-center"
-                          style={{ width: "80%", height: "100%" }}
-                        >
-                          <Form>
-                            <Form.Group>
-                              <Form.Control
-                                size="lg"
-                                placeholder="Game PIN"
-                                variant="outlined"
-                                value={PIN}
-                                type="number"
-                                onKeyPress={(event) => {
-                                  if (event.key === "Enter")
-                                    event.preventDefault();
-                                  // await JoinSession();
-                                }}
-                                onChange={(event) => setPIN(event.target.value)}
-                              />
-                            </Form.Group>
-                          </Form>
-                        </Row>
-                      </Row>
-                      <Row
-                        className="p4 text-align-center"
-                        style={{ height: "20%" }}
-                      >
-                        <Row
-                          className="p4 text-align-center"
-                          style={{ width: "75%", height: "30%" }}
-                        >
-                          <Button
-                            size="lg"
-                            color="primary"
-                            onClick={async () => {
-                              await JoinSession();
-                            }}
-                          >
-                            <Row className="p3 text-align-center" xs={12}>
-                              Join Session
-                            </Row>
-                          </Button>
-                        </Row>
-                      </Row>
-                    </Col>
-                    <Col
-                      className="p7"
-                      style={{ backgroundColor: "#E7E6E1" }}
-                      xs={6}
-                    >
-                      <Row
-                        className="p7 text-align-center p-bold p-1 mx-0"
-                        style={{ height: "20%" }}
-                      >
-                        Host
-                      </Row>
-                      <Row
-                        className="p4 text-align-center"
-                        style={{ height: "10%" }}
-                      >
-                        Host a live game or share a game with remote players.
-                      </Row>
-                      <Row
-                        className="p7 text-align-center"
-                        style={{ height: "50%" }}
+                        style={{ width: "75%", height: "30%" }}
                       >
                         <Button
                           size="lg"
                           color="primary"
-                          style={{ width: "75%" }}
-                          onClick={async () => {
-                            CreateSession();
+                          onClick={() => {
+                            JoinSession();
                           }}
                         >
                           <Row className="p3 text-align-center" xs={12}>
-                            Create Session
+                            Join Session
                           </Row>
                         </Button>
                       </Row>
-                    </Col>
-                  </Row>
-                  <Row
-                    className="p4 text-align-center p-1 mx-0"
-                    style={{ height: "10%" }}
-                    xs={12}
+                    </Row>
+                  </Col>
+                  <Col
+                    className="p7"
+                    style={{ backgroundColor: "#E7E6E1" }}
+                    xs={6}
                   >
-                    Version {version} | © {new Date().getFullYear()} FRAB5
-                    Thesis.
-                  </Row>
-                </Col>
-              </Row>
+                    <Row
+                      className="p7 text-align-center p-bold p-1 mx-0"
+                      style={{ height: "20%" }}
+                    >
+                      Host
+                    </Row>
+                    <Row
+                      className="p4 text-align-center"
+                      style={{ height: "10%" }}
+                    >
+                      Host a live game or share a game with remote players.
+                    </Row>
+                    <Row
+                      className="p7 text-align-center"
+                      style={{ height: "50%" }}
+                    >
+                      <Button
+                        size="lg"
+                        color="primary"
+                        style={{ width: "75%" }}
+                        onClick={() => {
+                          CreateSession();
+                        }}
+                      >
+                        <Row className="p3 text-align-center" xs={12}>
+                          Create Session
+                        </Row>
+                      </Button>
+                    </Row>
+                  </Col>
+                </Row>
+                <Row
+                  className="p4 text-align-center p-1 mx-0"
+                  style={{ height: "10%" }}
+                  xs={12}
+                >
+                  Version {version} | © {new Date().getFullYear()} FRAB5 Thesis.
+                </Row>
+              </Col>
             </Row>
-          )}
-        </div>
-      </FullScreen>
+          </Row>
+        )}
+      </div>
     );
   } else if (FSMPage === "MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE") {
     return (
@@ -1492,8 +1381,15 @@ export default function Multiplayer() {
                       size="lg"
                       color="primary"
                       variant="outline-danger"
-                      onClick={async () => {
-                        await onExitButtonEvent();
+                      onClick={() => {
+                        // onExitButtonEvent();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        disconnectToBluetoothDeviceImmediately();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        history.goForward();
+                        history.push("/");
                       }}
                     >
                       <Row className="p-arrow-button text-align-center" xs={12}>
@@ -1560,9 +1456,11 @@ export default function Multiplayer() {
                             onKeyPress={(event) => {
                               if (event.key === "Enter") event.preventDefault();
                             }}
-                            onChange={(event) =>
-                              setGroupPlayerName(event.target.value)
-                            }
+                            onChange={(event) => {
+                              let value = event.target.value;
+                              value = value.replace(/[^a-zA-Z0-9\s]*$/, "");
+                              setGroupPlayerName(value);
+                            }}
                           />
                         </Form.Group>
                       </Form>
@@ -1575,8 +1473,8 @@ export default function Multiplayer() {
                     <Button
                       size="lg"
                       color="primary"
-                      onClick={async () => {
-                        await checkGroupPlayerName();
+                      onClick={() => {
+                        checkGroupPlayerName();
                       }}
                     >
                       <Row className="ph3 text-align-center" xs={12}>
@@ -1616,8 +1514,15 @@ export default function Multiplayer() {
                       size="lg"
                       color="primary"
                       variant="outline-danger"
-                      onClick={async () => {
-                        await onExitButtonEvent();
+                      onClick={() => {
+                        // onExitButtonEvent();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        disconnectToBluetoothDeviceImmediately();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        history.goForward();
+                        history.push("/");
                       }}
                     >
                       <Row className="p-arrow-button text-align-center" xs={12}>
@@ -1673,9 +1578,11 @@ export default function Multiplayer() {
                                 if (event.key === "Enter")
                                   event.preventDefault();
                               }}
-                              onChange={(event) =>
-                                setGroupPlayerName(event.target.value)
-                              }
+                              onChange={(event) => {
+                                let value = event.target.value;
+                                value = value.replace(/[^a-zA-Z0-9\s]*$/, "");
+                                setGroupPlayerName(value);
+                              }}
                             />
                           </Form.Group>
                         </Form>
@@ -1692,8 +1599,8 @@ export default function Multiplayer() {
                         <Button
                           size="lg"
                           color="primary"
-                          onClick={async () => {
-                            await checkGroupPlayerName();
+                          onClick={() => {
+                            checkGroupPlayerName();
                           }}
                         >
                           <Row className="p3 text-align-center" xs={12}>
@@ -1745,8 +1652,15 @@ export default function Multiplayer() {
                       size="lg"
                       color="primary"
                       variant="outline-danger"
-                      onClick={async () => {
-                        await onExitButtonEvent();
+                      onClick={() => {
+                        // onExitButtonEvent();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        disconnectToBluetoothDeviceImmediately();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        history.goForward();
+                        history.push("/");
                       }}
                     >
                       <Row className="p-arrow-button text-align-center" xs={12}>
@@ -1810,12 +1724,16 @@ export default function Multiplayer() {
                             variant="outlined"
                             value={roomHostName}
                             type="text"
+                            pattern="[A-Za-z]{1,50}"
                             onKeyPress={(event) => {
                               if (event.key === "Enter") event.preventDefault();
+                              console.log(event.key);
                             }}
-                            onChange={(event) =>
-                              setRoomHostName(event.target.value)
-                            }
+                            onChange={(event) => {
+                              let value = event.target.value;
+                              value = value.replace(/[^a-zA-Z0-9\s]*$/, "");
+                              setRoomHostName(value);
+                            }}
                           />
                         </Form.Group>
                       </Form>
@@ -1828,8 +1746,8 @@ export default function Multiplayer() {
                     <Button
                       size="lg"
                       color="primary"
-                      onClick={async () => {
-                        await checkRoomHostName();
+                      onClick={() => {
+                        checkRoomHostName();
                       }}
                     >
                       <Row className="ph3 text-align-center" xs={12}>
@@ -1869,8 +1787,15 @@ export default function Multiplayer() {
                       size="lg"
                       color="primary"
                       variant="outline-danger"
-                      onClick={async () => {
-                        await onExitButtonEvent();
+                      onClick={() => {
+                        // onExitButtonEvent();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        disconnectToBluetoothDeviceImmediately();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        history.goForward();
+                        history.push("/");
                       }}
                     >
                       <Row className="p-arrow-button text-align-center" xs={12}>
@@ -1922,13 +1847,17 @@ export default function Multiplayer() {
                               variant="outlined"
                               value={roomHostName}
                               type="text"
+                              pattern="[A-Za-z]{1,50}"
                               onKeyPress={(event) => {
-                                if (event.key === "Enter")
+                                if (event.key === "Enter") {
                                   event.preventDefault();
+                                }
                               }}
-                              onChange={(event) =>
-                                setRoomHostName(event.target.value)
-                              }
+                              onChange={(event) => {
+                                let value = event.target.value;
+                                value = value.replace(/[^a-zA-Z0-9\s]*$/, "");
+                                setRoomHostName(value);
+                              }}
                             />
                           </Form.Group>
                         </Form>
@@ -1945,8 +1874,8 @@ export default function Multiplayer() {
                         <Button
                           size="lg"
                           color="primary"
-                          onClick={async () => {
-                            await checkRoomHostName();
+                          onClick={() => {
+                            checkRoomHostName();
                           }}
                         >
                           <Row className="p3 text-align-center" xs={12}>
@@ -1994,8 +1923,25 @@ export default function Multiplayer() {
                       size="lg"
                       color="primary"
                       variant="outline-danger"
-                      onClick={async () => {
-                        await onExitButtonEvent();
+                      onClick={() => {
+                        // onExitButtonPlayerEvent();
+                        // setIsExit(true);
+                        // sleep(stability_exit_delay);
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        disconnectToBluetoothDeviceImmediately();
+                        db.ref(
+                          "gameSessions/" +
+                            getPIN +
+                            "/players/" +
+                            groupPlayerName
+                        ).remove();
+                        // history.push('/');
+                        history.goForward();
+                        history.push("/");
                       }}
                     >
                       <Row className="p-arrow-button text-align-center" xs={12}>
@@ -2037,9 +1983,9 @@ export default function Multiplayer() {
                           isLeftButtonPressed ||
                           isUpButtonPressed ||
                           isStopButtonPressed ||
-                          isDirectionButtonReleased ||
-                          gameStarted ||
-                          isUserFinished
+                          isDirectionButtonReleased
+                          // gameStarted ||
+                          // isUserFinished
                         }
                       >
                         <Row
@@ -2062,9 +2008,9 @@ export default function Multiplayer() {
                           isLeftButtonPressed ||
                           isUpButtonPressed ||
                           isStopButtonPressed ||
-                          isDirectionButtonReleased ||
-                          gameStarted ||
-                          isUserFinished
+                          isDirectionButtonReleased
+                          // gameStarted ||
+                          // isUserFinished
                         }
                       >
                         <Row
@@ -2314,7 +2260,7 @@ export default function Multiplayer() {
                       justifyContent: "center",
                       alignItems: "flex-start",
                     }}
-                    xs={6}
+                    xs={2}
                   ></Col>
                   <Col
                     style={{
@@ -2322,13 +2268,13 @@ export default function Multiplayer() {
                       justifyContent: "right",
                       alignItems: "flex-start",
                     }}
-                    xs={6}
+                    xs={8}
                   >
                     <Button
                       size="lg"
                       variant="danger"
                       style={{ height: "100%", width: "100%" }}
-                      onClick={async () => setIsUserFinished(true)}
+                      onClick={() => setIsUserFinished(true)}
                       disabled={
                         !isBluetoothConnected ||
                         isDownButtonPressed ||
@@ -2346,6 +2292,14 @@ export default function Multiplayer() {
                       </Row>
                     </Button>
                   </Col>
+                  <Col
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "flex-start",
+                    }}
+                    xs={2}
+                  ></Col>
                 </Row>
                 <Row
                   className="ph7 text-align-center text-white p-1"
@@ -2402,7 +2356,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsUpButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2413,7 +2367,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsUpButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2467,7 +2421,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsLeftButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2478,7 +2432,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsLeftButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2520,7 +2474,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsStopButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2531,7 +2485,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsStopButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2572,7 +2526,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsRightButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2583,7 +2537,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsRightButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2646,7 +2600,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsDownButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2657,7 +2611,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsDownButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2724,9 +2678,26 @@ export default function Multiplayer() {
                       size="lg"
                       color="primary"
                       variant="outline-danger"
-                      onClick={async () => {
+                      onClick={() => {
                         // await sendCommand(restartCommand);
-                        await onExitButtonEvent();
+                        // onExitButtonPlayerEvent();
+                        // setIsExit(true);
+                        // sleep(stability_exit_delay);
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        disconnectToBluetoothDeviceImmediately();
+                        db.ref(
+                          "gameSessions/" +
+                            getPIN +
+                            "/players/" +
+                            groupPlayerName
+                        ).remove();
+                        // history.push('/');
+                        history.goForward();
+                        history.push("/");
                       }}
                       style={{ height: "100%", width: "25%" }}
                     >
@@ -2796,7 +2767,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsUpButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2807,7 +2778,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsUpButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2861,7 +2832,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsLeftButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2872,7 +2843,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsLeftButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2914,7 +2885,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsStopButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2925,7 +2896,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsStopButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2965,7 +2936,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsRightButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -2976,7 +2947,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsRightButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -3030,7 +3001,7 @@ export default function Multiplayer() {
                             }}
                             onMouseUp={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsDownButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -3041,7 +3012,7 @@ export default function Multiplayer() {
                             }}
                             onTouchEnd={async () => {
                               setIsDirectionButtonReleased(true);
-                              await sleep(stability_delay);
+                              await sleep(stability_communicate_delay);
                               await sendCommand(stopCommand);
                               setIsDownButtonPressed(false);
                               setIsDirectionButtonReleased(false);
@@ -3303,7 +3274,7 @@ export default function Multiplayer() {
                       justifyContent: "center",
                       alignItems: "flex-start",
                     }}
-                    xs={6}
+                    xs={2}
                   ></Col>
                   <Col
                     style={{
@@ -3311,13 +3282,13 @@ export default function Multiplayer() {
                       justifyContent: "right",
                       alignItems: "flex-start",
                     }}
-                    xs={6}
+                    xs={8}
                   >
                     <Button
                       size="lg"
                       variant="danger"
                       style={{ height: "100%", width: "100%" }}
-                      onClick={async () => setIsUserFinished(true)}
+                      onClick={() => setIsUserFinished(true)}
                       disabled={
                         !isBluetoothConnected ||
                         isDownButtonPressed ||
@@ -3335,6 +3306,14 @@ export default function Multiplayer() {
                       </Row>
                     </Button>
                   </Col>
+                  <Col
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "flex-start",
+                    }}
+                    xs={2}
+                  ></Col>
                 </Row>
               </Col>
 
@@ -3436,9 +3415,9 @@ export default function Multiplayer() {
                           isLeftButtonPressed ||
                           isUpButtonPressed ||
                           isStopButtonPressed ||
-                          isDirectionButtonReleased ||
-                          gameStarted ||
-                          isUserFinished
+                          isDirectionButtonReleased
+                          // gameStarted ||
+                          // isUserFinished
                         }
                       >
                         <Row
@@ -3461,9 +3440,9 @@ export default function Multiplayer() {
                           isLeftButtonPressed ||
                           isUpButtonPressed ||
                           isStopButtonPressed ||
-                          isDirectionButtonReleased ||
-                          gameStarted ||
-                          isUserFinished
+                          isDirectionButtonReleased
+                          // gameStarted ||
+                          // isUserFinished
                         }
                       >
                         <Row
@@ -3482,7 +3461,7 @@ export default function Multiplayer() {
                   style={{
                     alignItems: "center",
                     backgroundColor: "#FFFFFF",
-                    height: "60%",
+                    height: "62%",
                   }}
                 ></Row>
                 <Row
@@ -3577,20 +3556,27 @@ export default function Multiplayer() {
                     style={{ height: "100%", backgroundColor: "#FFFFFF" }}
                   >
                     <Button
-                      onClick={async () => {
+                      onClick={() => {
+                        setIsStartAdminButtonPressed(true);
                         if (getInClassRoom) {
-                          await db.ref("gameSessions/" + getPIN).update({
-                            gameAlreadyStarted: true,
+                          db.ref("gameSessions/" + getPIN).update({
+                            // gameAlreadyStarted: true,
                             gameStarted: true,
                             timeIsActived: true,
                             timeIsPaused: false,
                           });
                         }
                         startStopwatch();
-
-                        setIsCloseResetTimerButton(true);
+                        // sleep(stability_admin_control_timer_delay);
+                        setIsStartAdminButtonPressed(false);
+                        // setIsCloseResetTimerButton(true);
                       }}
-                      disabled={timeIsActive && timeIsPaused}
+                      disabled={
+                        (timeIsActive && !timeIsPaused) ||
+                        isStopAdminButtonPressed ||
+                        isResetAdminButtonPressed ||
+                        isExit
+                      }
                     >
                       <Row className="p3 text-align-center" xs={12}>
                         Start
@@ -3604,19 +3590,27 @@ export default function Multiplayer() {
                     style={{ height: "100%", backgroundColor: "#FFFFFF" }}
                   >
                     <Button
-                      onClick={async () => {
+                      onClick={() => {
+                        setIsStopAdminButtonPressed(true);
                         if (getInClassRoom) {
-                          await db.ref("gameSessions/" + getPIN).update({
-                            gameAlreadyStarted: true,
+                          db.ref("gameSessions/" + getPIN).update({
+                            // gameAlreadyStarted: true,
                             gameStarted: true,
                             timeIsActived: false,
                             timeIsPaused: true,
                           });
                         }
                         stopStopwatch();
-                        setIsCloseResetTimerButton(false);
+                        // sleep(stability_admin_control_timer_delay);
+                        setIsStopAdminButtonPressed(false);
+                        // setIsCloseResetTimerButton(false);
                       }}
-                      disabled={!(timeIsActive && timeIsPaused)}
+                      disabled={
+                        !(timeIsActive && !timeIsPaused) ||
+                        isStartAdminButtonPressed ||
+                        isResetAdminButtonPressed ||
+                        isExit
+                      }
                     >
                       <Row className="p3 text-align-center" xs={12}>
                         Stop
@@ -3630,10 +3624,11 @@ export default function Multiplayer() {
                     style={{ height: "100%", backgroundColor: "#FFFFFF" }}
                   >
                     <Button
-                      onClick={async () => {
+                      onClick={() => {
+                        setIsResetAdminButtonPressed(true);
                         if (getInClassRoom) {
-                          await db.ref("gameSessions/" + getPIN).update({
-                            gameAlreadyStarted: true,
+                          db.ref("gameSessions/" + getPIN).update({
+                            // gameAlreadyStarted: true,
                             gameStarted: false,
                             timeIsActived: false,
                             timeIsPaused: false,
@@ -3643,9 +3638,18 @@ export default function Multiplayer() {
                           });
                         }
                         resetStopwatch();
-                        setIsCloseResetTimerButton(true);
+                        // sleep(stability_admin_control_timer_delay);
+                        setIsResetAdminButtonPressed(false);
+                        // setIsCloseResetTimerButton(true);
                       }}
-                      disabled={isCloseResetTimerButton}
+                      disabled={
+                        // isCloseResetTimerButton ||
+                        !timeIsActive ||
+                        !timeIsPaused ||
+                        isStartAdminButtonPressed ||
+                        isStopAdminButtonPressed ||
+                        isExit
+                      }
                     >
                       <Row className="p3 text-align-center" xs={12}>
                         Reset
@@ -3660,12 +3664,28 @@ export default function Multiplayer() {
                   >
                     <Button
                       variant="danger"
-                      onClick={async () => {
-                        onExitButtonAdminEvent();
+                      onClick={() => {
+                        // setIsExit(true);
+                        // sleep(stability_exit_delay);
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        // onExitButtonAdminEvent();
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
+                        clearInterval(intervalId);
+                        resetStopwatch();
+                        db.ref("gameSessions/" + getPIN).remove();
+                        // history.goForward();
+                        // history.push("/");
                       }}
                       disabled={
-                        (timeIsActive && timeIsPaused) ||
-                        !isCloseResetTimerButton
+                        timeIsActive ||
+                        timeIsPaused ||
+                        // !isCloseResetTimerButton ||
+                        isStartAdminButtonPressed ||
+                        isStopAdminButtonPressed ||
+                        isResetAdminButtonPressed
                       }
                     >
                       <Row className="p3 text-align-center" xs={12}>
@@ -3696,85 +3716,95 @@ export default function Multiplayer() {
             </Col>
           </Row>
           <Row
-            className="p-1 mx-0  border border-dark"
-            style={{ width: "100%", height: "65%", backgroundColor: "#D3DEDC" }}
+            className="p-1 mx-0 border border-dark"
+            style={{ width: "100%", height: "65%", backgroundColor: "#FFFFFF" }}
           >
             <DataGrid
               dataSource={playersData}
-              keyExpr="groupName"
               showBorders={true}
-              allowColumnReordering={true}
-              ref={dataGridRef}
-              // allowColumnResizing={true}
-              columnAutoWidth={true}
+              onExporting={(e) => {
+                const workbook = new Workbook();
+                const worksheet = workbook.addWorksheet("Main sheet");
+
+                exportDataGrid({
+                  component: e.component,
+                  worksheet,
+                  autoFilterEnabled: true,
+                }).then(() => {
+                  workbook.xlsx.writeBuffer().then((buffer) => {
+                    saveAs(
+                      new Blob([buffer], { type: "application/octet-stream" }),
+                      "Data Grid Result.xlsx"
+                    );
+                  });
+                });
+                e.cancel = true;
+              }}
+              onSaved={(e) => {
+                if (e.changes.length > 0) {
+                  if (isHost && getInClassRoom) {
+                    db.ref(
+                      "gameSessions/" +
+                        getPIN +
+                        "/players/" +
+                        e.changes[0].data.groupName
+                    ).update({
+                      parcelCorrectCount: e.changes[0].data.parcelCorrectCount,
+                    });
+                  }
+                  // }
+                  // }
+                }
+                e.cancel = true;
+              }}
             >
-              <Editing
-                mode="row"
-                // changes={changes}
-                onChangesChange={onChangesChange}
-                // editRowKey={editRowKey}
-                // onEditRowKeyChange={onEditRowKeyChange}
-                allowUpdating={true && !gameStarted}
-              />
-              <Scrolling columnRenderingMode="virtual" />
-              <GroupPanel visible={true} />
-              <SearchPanel visible={true} />
-              <Grouping autoExpandAll={true} />
               <Sorting mode="multiple" />
+              <SearchPanel visible={true} highlightCaseSensitive={true} />
+              <Editing mode="row" allowUpdating={true} />
               <Column
                 dataField="groupName"
-                dataType="string"
                 caption="Group Name"
                 allowEditing={false}
               />
               <Column
                 dataField="deviceName"
-                dataType="string"
                 caption="Robot Name"
+                allowEditing={false}
+              />
+              <Column
+                dataField="isFinishedMission"
+                caption="Finished"
+                defaultSortOrder="desc"
+                alignment="right"
                 allowEditing={false}
               />
               <Column
                 dataField="parcelCorrectCount"
                 dataType="number"
-                caption="Sent Correctly Parcel Count"
-                allowEditing={true && !gameStarted}
+                caption="Parcel Count"
                 defaultSortOrder="desc"
+                allowEditing={true}
               />
               <Column
                 dataField="distanceSensorValue"
                 dataType="number"
                 caption="Distance (m.)"
-                allowEditing={false}
                 defaultSortOrder="asc"
+                allowEditing={false}
               />
               <Column
-                alignment="right"
                 dataField="timeFinishedRecord"
-                dataType="string"
-                caption="Recorded Time (h:mm:ss)"
-                allowEditing={false}
+                caption="Recorded Time"
                 defaultSortOrder="asc"
+                alignment="right"
+                allowEditing={false}
               />
-              <Toolbar>
-                <Item name="groupPanel" />
-                <Item location="after">
-                  <ButtonD
-                    icon="exportpdf"
-                    text="Export to PDF"
-                    onClick={exportGridPDF}
-                  />
-                  <ButtonD
-                    icon="exportxlsx"
-                    text="Export to XLSX"
-                    onClick={exportGridExcel}
-                  />
-                </Item>
-                <Item name="searchPanel" />
-              </Toolbar>
+              <Export enabled={true} />
+              <Pager visible={true} allowedPageSizes={5} />
+              <Paging enabled={true} defaultPageSize={5} />
             </DataGrid>
           </Row>
         </Row>
-        {/* )} */}
       </div>
     );
   } else if (FSMPage === "MULTIPLAYER_MODE_LOADINGPAGE") {
@@ -3869,11 +3899,7 @@ export default function Multiplayer() {
                   style={{ textAlign: "center", height: "20%" }}
                   xs={12}
                 >
-                  The game of this room
-                  <br />
-                  has already started
-                  <br />
-                  or The host of the room left.
+                  The host of the room left.
                   <br />
                   Thanks for playing!
                 </Row>
@@ -3885,19 +3911,17 @@ export default function Multiplayer() {
                   <Button
                     size="lg"
                     variant="danger"
-                    onClick={async () => {
+                    onClick={() => {
                       if (getInClassRoom) {
                         if (isHost) {
-                          await db.ref("gameSessions/" + getPIN).remove();
+                          db.ref("gameSessions/" + getPIN).remove();
                         } else {
-                          await db
-                            .ref(
-                              "gameSessions/" +
-                                getPIN +
-                                "/players/" +
-                                groupPlayerName
-                            )
-                            .remove();
+                          db.ref(
+                            "gameSessions/" +
+                              getPIN +
+                              "/players/" +
+                              groupPlayerName
+                          ).remove();
                         }
                       }
                       history.push("/");
@@ -3939,8 +3963,7 @@ export default function Multiplayer() {
                   style={{ height: "15%" }}
                   xs={12}
                 >
-                  The game of this room has already started or The host of the
-                  room left. Thanks for playing!
+                  The host of the room left. Thanks for playing!
                 </Row>
                 <Row
                   className="p text-align-center p-1 mx-0"
@@ -3955,19 +3978,17 @@ export default function Multiplayer() {
                       size="sm"
                       color="primary"
                       variant="danger"
-                      onClick={async () => {
+                      onClick={() => {
                         if (getInClassRoom) {
                           if (isHost) {
-                            await db.ref("gameSessions/" + getPIN).remove();
+                            db.ref("gameSessions/" + getPIN).remove();
                           } else {
-                            await db
-                              .ref(
-                                "gameSessions/" +
-                                  getPIN +
-                                  "/players/" +
-                                  groupPlayerName
-                              )
-                              .remove();
+                            db.ref(
+                              "gameSessions/" +
+                                getPIN +
+                                "/players/" +
+                                groupPlayerName
+                            ).remove();
                           }
                         }
                         history.push("/");
@@ -4027,8 +4048,6 @@ export default function Multiplayer() {
                   <br />
                   has already started
                   <br />
-                  or The host of the room left.
-                  <br />
                   Thanks for playing!
                 </Row>
                 <Row
@@ -4039,8 +4058,8 @@ export default function Multiplayer() {
                   <Button
                     size="lg"
                     variant="danger"
-                    onClick={async () => {
-                      await history.push("/");
+                    onClick={() => {
+                      history.push("/");
                     }}
                     style={{ width: "75%" }}
                   >

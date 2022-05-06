@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-    @file           : ESP32-EDUBOT-20220130.ino
+    @file           : ESP32-EDUBOT-20220507.ino
     @brief          : Main program body
   ******************************************************************************
 */
@@ -51,7 +51,7 @@ BLEServer* pServer = NULL;
 BLECharacteristic* pEncoderSensorCharacteristic = NULL;
 BLECharacteristic* pCommandCharacteristic = NULL;
 
-#define BLE_NAME "ESP32-EDUBOT5"
+#define BLE_NAME "EDUBOT-ORANGE"
 #define MY_ESP32_SERVICE_UUID                 "818796aa-2f20-11ec-8d3d-0242ac130003"
 #define ENCODER_SENSOR_CHARACTERISTIC_UUID  "818799c0-2f20-11ec-8d3d-0242ac130003"
 #define COMMAND_CHARACTERISTIC_UUID    "81879be6-2f20-11ec-8d3d-0242ac130003"
@@ -228,6 +228,10 @@ class MyCharactertisticCallbacks: public BLECharacteristicCallbacks {
           SPIN_RIGHT_DIRECTION = false;
           BACKWARD_DIRECTION = false;
           FORWARD_DIRECTION = false;
+          detachInterrupt(digitalPinToInterrupt(encoderPin1Left));
+          detachInterrupt(digitalPinToInterrupt(encoderPin2Left));
+          detachInterrupt(digitalPinToInterrupt(encoderPin1Right));
+          detachInterrupt(digitalPinToInterrupt(encoderPin2Right));
         }
         else if (value[0] == 0x55)
         {
@@ -385,29 +389,29 @@ void onStrightDrivingControlTimer() {
     enc_l_prev = num_ticks_l;
     enc_r_prev = num_ticks_r;
 
-    // If left is faster, slow it down and speed up right
-    if ( diff_l > diff_r ) {
-      if (FORWARD_DIRECTION && !BACKWARD_DIRECTION) {
-        power_l -= motor_offsetL;
-        power_r += motor_offsetR;
-      }
-      else if (!FORWARD_DIRECTION && BACKWARD_DIRECTION) {
-        power_l += motor_offsetL;
-        power_r -= motor_offsetR;
-      }
-    }
-
-    // If right is faster, slow it down and speed up left
-    if ( diff_l < diff_r ) {
-      if (FORWARD_DIRECTION && !BACKWARD_DIRECTION) {
-        power_l += motor_offsetL;
-        power_r -= motor_offsetR;
-      }
-      else if (!FORWARD_DIRECTION && BACKWARD_DIRECTION) {
-        power_l -= motor_offsetL;
-        power_r += motor_offsetR;
-      }
-    }
+//    // If left is faster, slow it down and speed up right
+//    if ( diff_l > diff_r ) {
+//      if (FORWARD_DIRECTION && !BACKWARD_DIRECTION) {
+//        power_l -= motor_offsetL;
+//        power_r += motor_offsetR;
+//      }
+//      else if (!FORWARD_DIRECTION && BACKWARD_DIRECTION) {
+//        power_l += motor_offsetL;
+//        power_r -= motor_offsetR;
+//      }
+//    }
+//
+//    // If right is faster, slow it down and speed up left
+//    if ( diff_l < diff_r ) {
+//      if (FORWARD_DIRECTION && !BACKWARD_DIRECTION) {
+//        power_l += motor_offsetL;
+//        power_r -= motor_offsetR;
+//      }
+//      else if (!FORWARD_DIRECTION && BACKWARD_DIRECTION) {
+//        power_l -= motor_offsetL;
+//        power_r += motor_offsetR;
+//      }
+//    }
   }
   else if (!STRIGHT_DIRECTION && ROTATION_DIRECTION) {
     if (SPIN_LEFT_DIRECTION && !SPIN_RIGHT_DIRECTION) {
@@ -438,7 +442,30 @@ void startStrightDrivingControlTimer() {
 
   timerAlarmWrite(StrightDrivingControlTimer, 100, true);
   //timerAlarmWrite(timer?, Sampling Time, bool autoreload);
-  //Sampling Time=> 2 s = 2000000/(80,000,000 MHz/prescale 80)
+  //Sampling Time=> 100us = 100/(80,000,000 MHz/prescale 80)
+  //autoreload: if it is true, timer will repeat.
+
+  timerAlarmEnable(StrightDrivingControlTimer); //Just Enable
+
+}
+void startStrightDrivingControlTimer2() {
+
+  if (StrightDrivingControlTimer == NULL) {
+    StrightDrivingControlTimer = timerBegin(0, 80, true);
+    //Name = timerBegin(timerN, prescale, up/down);
+    //count up (true) or down (false).
+    //80 = prescale => 80 MHz/80 = 1,000,000 Hz
+    //timerN = 0…3
+
+    timerAttachInterrupt(StrightDrivingControlTimer, &onStrightDrivingControlTimer, true);
+    //timerAttachInterrupt(timer?, ISR , bool edge);
+    //edge: if it is true, an alarm will generate an edge type interrupt.
+    //edge (true) or level (false)
+  }
+
+  timerAlarmWrite(StrightDrivingControlTimer, 100, true);
+  //timerAlarmWrite(timer?, Sampling Time, bool autoreload);
+  //Sampling Time=> 100us = 100/(80,000,000 MHz/prescale 80)
   //autoreload: if it is true, timer will repeat.
 
   timerAlarmEnable(StrightDrivingControlTimer); //Just Enable

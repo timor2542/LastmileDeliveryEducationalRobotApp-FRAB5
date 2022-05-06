@@ -18,6 +18,9 @@ import App from "./App";
 // import * as serviceWorker from "./serviceWorker";
 
 import 'bootstrap/dist/css/bootstrap.min.css'
-import 'devextreme/dist/css/dx.light.css';
+// import 'devextreme/dist/css/dx.light.css';
+import './dx.light.css'
+// import "@devexpress/dx-react-grid-bootstrap4/dist/dx-react-grid-bootstrap4.css";
+
 
 ReactDOM.render(<App />, document.getElementById('root'));

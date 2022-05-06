@@ -14,7 +14,6 @@
 import React, { useState, useEffect} from "react"; // include React Library
 import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { FaUser, FaUsers } from "react-icons/fa"; // include React Icons Library
-// import { BsArrowsFullscreen, BsFullscreenExit } from "react-icons/bs"; // include React Icons Library
 import { Button, Col, Row } from "react-bootstrap"; // include React Bootstrap Library
 import { useMediaQuery } from "react-responsive"; // include React Responsive Library
 /* REACT LIBRARY TOPICS RELATED CODE END */
@@ -22,14 +21,15 @@ import { useMediaQuery } from "react-responsive"; // include React Responsive Li
 export default function Homepage() {
 
   // eslint-disable-next-line
-  const [version, setVersion] = useState("1.5.0");
+  const [version, setVersion] = useState("1.10.0");
 
   const isPortrait = useMediaQuery({ query: "(orientation: portrait)" }); // Check responsive.
   const history = useHistory(); // Call window.history of React
 
   /* BACK BUTTON EVENT TO HOMEPAGE CODE BEGIN */
-  const onBackButtonEvent = async (event) => {
+  const onBackButtonEvent = (event) => {
     event.preventDefault();
+    history.goForward();
     history.push("/");
   };
 
