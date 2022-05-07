@@ -51,7 +51,7 @@ BLEServer* pServer = NULL;
 BLECharacteristic* pEncoderSensorCharacteristic = NULL;
 BLECharacteristic* pCommandCharacteristic = NULL;
 
-#define BLE_NAME "EDUBOT-ORANGE"
+#define BLE_NAME "EDUBOT-RED"
 #define MY_ESP32_SERVICE_UUID                 "818796aa-2f20-11ec-8d3d-0242ac130003"
 #define ENCODER_SENSOR_CHARACTERISTIC_UUID  "818799c0-2f20-11ec-8d3d-0242ac130003"
 #define COMMAND_CHARACTERISTIC_UUID    "81879be6-2f20-11ec-8d3d-0242ac130003"
@@ -426,29 +426,6 @@ void onStrightDrivingControlTimer() {
   }
 }
 void startStrightDrivingControlTimer() {
-
-  if (StrightDrivingControlTimer == NULL) {
-    StrightDrivingControlTimer = timerBegin(0, 80, true);
-    //Name = timerBegin(timerN, prescale, up/down);
-    //count up (true) or down (false).
-    //80 = prescale => 80 MHz/80 = 1,000,000 Hz
-    //timerN = 0…3
-
-    timerAttachInterrupt(StrightDrivingControlTimer, &onStrightDrivingControlTimer, true);
-    //timerAttachInterrupt(timer?, ISR , bool edge);
-    //edge: if it is true, an alarm will generate an edge type interrupt.
-    //edge (true) or level (false)
-  }
-
-  timerAlarmWrite(StrightDrivingControlTimer, 100, true);
-  //timerAlarmWrite(timer?, Sampling Time, bool autoreload);
-  //Sampling Time=> 100us = 100/(80,000,000 MHz/prescale 80)
-  //autoreload: if it is true, timer will repeat.
-
-  timerAlarmEnable(StrightDrivingControlTimer); //Just Enable
-
-}
-void startStrightDrivingControlTimer2() {
 
   if (StrightDrivingControlTimer == NULL) {
     StrightDrivingControlTimer = timerBegin(0, 80, true);
