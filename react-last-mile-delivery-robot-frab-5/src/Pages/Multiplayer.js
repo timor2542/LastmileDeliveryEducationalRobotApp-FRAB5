@@ -3,7 +3,7 @@
  *
  *
  *  Created on: Oct 8, 2021
- *  Modified on: Mar 8, 2022
+ *  Modified on: May 11, 2022
  *
  *      Author: SakuranohanaTH
  *
@@ -1924,12 +1924,8 @@ export default function Multiplayer() {
                       color="primary"
                       variant="outline-danger"
                       onClick={() => {
-                        // onExitButtonPlayerEvent();
-                        // setIsExit(true);
-                        // sleep(stability_exit_delay);
                         clearInterval(intervalId);
                         resetStopwatch();
-                        // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
                         clearInterval(intervalId);
                         resetStopwatch();
                         disconnectToBluetoothDeviceImmediately();
@@ -1939,7 +1935,6 @@ export default function Multiplayer() {
                             "/players/" +
                             groupPlayerName
                         ).remove();
-                        // history.push('/');
                         history.goForward();
                         history.push("/");
                       }}
@@ -1972,7 +1967,6 @@ export default function Multiplayer() {
                       <Button
                         size="lg"
                         variant="outline-danger"
-                        // style={{ height: "100%", width: "100%" }}
                         onClick={async () =>
                           await disconnectToBluetoothDevice()
                         }
@@ -1984,8 +1978,6 @@ export default function Multiplayer() {
                           isUpButtonPressed ||
                           isStopButtonPressed ||
                           isDirectionButtonReleased
-                          // gameStarted ||
-                          // isUserFinished
                         }
                       >
                         <Row
@@ -1999,7 +1991,6 @@ export default function Multiplayer() {
                       <Button
                         size="lg"
                         variant="outline-primary"
-                        // style={{ height: "100%", width: "100%" }}
                         onClick={async () => await connectToBluetoothDevice()}
                         disabled={
                           isBluetoothConnected ||
@@ -2009,8 +2000,6 @@ export default function Multiplayer() {
                           isUpButtonPressed ||
                           isStopButtonPressed ||
                           isDirectionButtonReleased
-                          // gameStarted ||
-                          // isUserFinished
                         }
                       >
                         <Row
@@ -2249,7 +2238,6 @@ export default function Multiplayer() {
                   className=""
                   style={{
                     alignItems: "center",
-
                     backgroundColor: "#FFFFFF",
                     height: "10%",
                   }}

@@ -22,6 +22,10 @@ const int wheel_d = 44;           // Wheel diameter (mm)
 const float wheel_c = PI * wheel_d; // Wheel circumference (mm)
 const int counts_per_rev = 860; // Pulse per revolution
 
+// RED - GREEN 800
+// ORANGE - BLUE - WHITE 860
+
+
 // Pins
 const int L293D_IN1 = 2;
 const int L293D_IN2 = 4;
@@ -51,7 +55,7 @@ BLEServer* pServer = NULL;
 BLECharacteristic* pEncoderSensorCharacteristic = NULL;
 BLECharacteristic* pCommandCharacteristic = NULL;
 
-#define BLE_NAME "EDUBOT-RED"
+#define BLE_NAME "EDUBOT-BLUE"
 #define MY_ESP32_SERVICE_UUID                 "818796aa-2f20-11ec-8d3d-0242ac130003"
 #define ENCODER_SENSOR_CHARACTERISTIC_UUID  "818799c0-2f20-11ec-8d3d-0242ac130003"
 #define COMMAND_CHARACTERISTIC_UUID    "81879be6-2f20-11ec-8d3d-0242ac130003"
@@ -91,6 +95,8 @@ long diff_r = 0;
 long enc_l_prev = 0;
 long enc_r_prev = 0;
 
+bool isRotationDirection = false;
+
 class MyCharactertisticCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCommandCharacteristic) {
       detachInterrupt(digitalPinToInterrupt(encoderPin1Left));
@@ -120,10 +126,12 @@ class MyCharactertisticCallbacks: public BLECharacteristicCallbacks {
           num_ticks_r = 0;
           diff_l = 0;
           diff_r = 0;
+          if(!isRotationDirection){
           attachInterrupt(digitalPinToInterrupt(encoderPin1Left), updateEncoderLeftForward, CHANGE);
           attachInterrupt(digitalPinToInterrupt(encoderPin2Left), updateEncoderLeftForward, CHANGE);
           attachInterrupt(digitalPinToInterrupt(encoderPin1Right), updateEncoderRightForward, CHANGE);
           attachInterrupt(digitalPinToInterrupt(encoderPin2Right), updateEncoderRightForward, CHANGE);
+          }
           STRIGHT_DIRECTION = true;
           ROTATION_DIRECTION = false;
           SPIN_LEFT_DIRECTION = false;
@@ -145,10 +153,12 @@ class MyCharactertisticCallbacks: public BLECharacteristicCallbacks {
           num_ticks_r = 0;
           diff_l = 0;
           diff_r = 0;
+          if(!isRotationDirection){
           attachInterrupt(digitalPinToInterrupt(encoderPin1Left), updateEncoderLeftBackward, CHANGE);
           attachInterrupt(digitalPinToInterrupt(encoderPin2Left), updateEncoderLeftBackward, CHANGE);
           attachInterrupt(digitalPinToInterrupt(encoderPin1Right), updateEncoderRightBackward, CHANGE);
           attachInterrupt(digitalPinToInterrupt(encoderPin2Right), updateEncoderRightBackward, CHANGE);
+          }
           STRIGHT_DIRECTION = true;
           ROTATION_DIRECTION = false;
           SPIN_LEFT_DIRECTION = false;
@@ -169,6 +179,7 @@ class MyCharactertisticCallbacks: public BLECharacteristicCallbacks {
           num_ticks_r = 0;
           diff_l = 0;
           diff_r = 0;
+          isRotationDirection = true;
           detachInterrupt(digitalPinToInterrupt(encoderPin1Left));
           detachInterrupt(digitalPinToInterrupt(encoderPin2Left));
           detachInterrupt(digitalPinToInterrupt(encoderPin1Right));
@@ -193,6 +204,7 @@ class MyCharactertisticCallbacks: public BLECharacteristicCallbacks {
           num_ticks_r = 0;
           diff_l = 0;
           diff_r = 0;
+          isRotationDirection = true;
           detachInterrupt(digitalPinToInterrupt(encoderPin1Left));
           detachInterrupt(digitalPinToInterrupt(encoderPin2Left));
           detachInterrupt(digitalPinToInterrupt(encoderPin1Right));
@@ -228,10 +240,12 @@ class MyCharactertisticCallbacks: public BLECharacteristicCallbacks {
           SPIN_RIGHT_DIRECTION = false;
           BACKWARD_DIRECTION = false;
           FORWARD_DIRECTION = false;
+          if(isRotationDirection){
           detachInterrupt(digitalPinToInterrupt(encoderPin1Left));
           detachInterrupt(digitalPinToInterrupt(encoderPin2Left));
           detachInterrupt(digitalPinToInterrupt(encoderPin1Right));
-          detachInterrupt(digitalPinToInterrupt(encoderPin2Right));
+          detachInterrupt(digitalPinToInterrupt(encoderPin2Right));}
+          isRotationDirection = false;
         }
         else if (value[0] == 0x55)
         {
