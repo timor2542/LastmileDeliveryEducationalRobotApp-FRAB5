@@ -109,7 +109,7 @@ class MyCharactertisticCallbacks: public BLECharacteristicCallbacks {
       SPIN_RIGHT_DIRECTION = false;
       BACKWARD_DIRECTION = false;
       FORWARD_DIRECTION = false;
-      std::string value = pCommandCharacteristic->getValue();
+      String value = pCommandCharacteristic->getValue();
       if (value.length() == 1)
       {
         if (value[0] == 0x50)
