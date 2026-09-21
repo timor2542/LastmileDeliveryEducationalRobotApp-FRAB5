@@ -49,7 +49,8 @@ import {
 import get from "../universalHTTPRequests/get"; // include Firebase fetching Library
 import { SiStatuspal } from "react-icons/si";
 
-import DataGrid, {
+import {
+  DataGrid,
   Column,
   Editing,
   Sorting,
