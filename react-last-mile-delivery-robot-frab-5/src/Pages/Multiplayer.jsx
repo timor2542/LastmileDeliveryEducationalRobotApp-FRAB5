@@ -11,7 +11,7 @@
 
 /* REACT LIBRARY TOPICS RELATED CODE BEGIN */
 
-import React, { useState, useEffect, useLayoutEffect } from "react"; // include React Library
+import React, { useState, useEffect, useRef } from "react"; // include React Library
 import { useStateIfMounted } from "use-state-if-mounted";
 import { useHistory } from "react-router-dom"; // include React Router DOM Library
 import { Button, Col, Row, Form } from "react-bootstrap";
@@ -35,6 +35,17 @@ import { RiPinDistanceFill } from "react-icons/ri"; // include React Icons Libra
 import { SiProbot } from "react-icons/si"; // include React Icons Library
 import { MdPin, MdOutlineTimer } from "react-icons/md"; // include React Icons Library
 import { db } from "../Firebase/Firebase"; // include Firebase Library
+import {
+  FirebaseUnavailableError,
+  createRoom,
+  joinRoom,
+  leaveRoom,
+  observeConnection,
+  readRoom,
+  validPin,
+  validPlayerName,
+  withServerAck,
+} from "../Firebase/sessionStore";
 import get from "../universalHTTPRequests/get"; // include Firebase fetching Library
 import { SiStatuspal } from "react-icons/si";
 
@@ -62,10 +73,6 @@ let startTime = 0; // Last Elaspsed Time Update Varaible
 let elapsedTime = 0; // Current Elaspsed Time Update Varaible
 let intervalId = null; // Interval to increase Time Variable
 
-let _hoursTimeFinishedRecord = "0";
-let _minutesTimeFinishedRecord = "00";
-let _secondsTimeFinishedRecord = "00";
-
 /* EXPORT DEFAULT FUNCTION MULTIPLAYER CODE BEGIN */
 export default function Multiplayer() {
   // eslint-disable-next-line
@@ -74,64 +81,84 @@ export default function Multiplayer() {
   const history = useHistory();
   /* CALL HISTORY CODE END */
 
-  /* TABLE ICON ON LEADERBOARD CODE END */
+  const activeSessionRef = useRef(null);
+  const firebaseConnectedRef = useRef(false);
+  const connectionWasReadyRef = useRef(false);
+  const lastPublishedSecondRef = useRef(null);
+  const timeWriteInFlightRef = useRef(false);
+  const lastDistanceWriteRef = useRef(0);
+  const distanceWriteInFlightRef = useRef(false);
+  const [firebaseError, setFirebaseError] = useState('');
 
-  /* BACK BUTTON EVENT ON BROWNSER CODE BEGIN */
-  function onBackButtonEvent(event) {
-    event.preventDefault();
-    setIsExit(true);
-    clearInterval(intervalId);
-    resetStopwatch();
-    clearInterval(intervalId);
-    resetStopwatch();
-    disconnectToBluetoothDeviceImmediately();
-    clearInterval(intervalId);
-    resetStopwatch();
-    db.ref("gameSessions/" + getPIN).remove();
-  }
-  /* BACK BUTTON EVENT ON BROWNSER CODE END */
-
-  /* EXIT BUTTON EVENT ON MULTIPLAYER UI CODE END */
-  /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE BEGIN */
-  const onBeforeUnload = (event) => {
-    // the method that will be used for both add and remove event
-    event.preventDefault();
-    let confirmationMessage = "";
-    /* Do you small action code here */
-    (event || window.event).returnValue = confirmationMessage; //Gecko + IE
-    disconnectToBluetoothDeviceImmediately();
-    return confirmationMessage;
-  };
-  /* ALERT MESSEGE BEFORE UNLOAD PAGE CODE END */
-  /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE CODE BEGIN */
-  const afterUnload = () => {
-    disconnectToBluetoothDeviceImmediately();
-    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    if (getInClassRoom) {
-      if (isHost) {
-        db.ref("gameSessions/" + getPIN).remove();
-      } else {
-        db.ref(
-          "gameSessions/" + getPIN + "/players/" + groupPlayerName
-        ).remove();
-      }
-    }
-    history.push("/");
-  };
-
-  /* DISCONNNECT BLUETOOTH DEVICE AFTER UNLOAD PAGE COED END */
-  /* DYNAMIC OF COMPONENT CODE BEGIN */
   useEffect(() => {
-    window.addEventListener("beforeunload", onBeforeUnload);
-    window.addEventListener("unload", afterUnload);
-    window.addEventListener("popstate", onBackButtonEvent);
-    return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
-      window.removeEventListener("unload", afterUnload);
-      window.removeEventListener("popstate", onBackButtonEvent);
+    const stopObserving = observeConnection(db, (connected) => {
+      firebaseConnectedRef.current = connected;
+      if (connected) connectionWasReadyRef.current = true;
+      if (!connected && connectionWasReadyRef.current && activeSessionRef.current) {
+        // Keep old queued writes from recreating a room after onDisconnect removes it.
+        activeSessionRef.current = null;
+        db.goOffline();
+        setGetInClassRoom(false);
+        setFirebaseError('Firebase disconnected. This room has ended. Reload the page to reconnect.');
+        setFSMPage('MULTIPLAYER_MODE_ERRORGOTDISCONNECTEDPAGE');
+      }
+    });
+    const onPageHide = () => {
+      if (activeSessionRef.current) db.goOffline();
     };
-  });
-  /* DYNAMIC OF COMPONENT CODE END */
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      stopObserving();
+      window.removeEventListener('pagehide', onPageHide);
+      const session = activeSessionRef.current;
+      activeSessionRef.current = null;
+      if (session) leaveRoom(session).catch(() => db.goOffline());
+    };
+  }, []);
+
+  function handleFirebaseFailure(error) {
+    setFirebaseError(error?.message || 'Firebase could not save the data.');
+    if (error instanceof FirebaseUnavailableError) db.goOffline();
+    if (activeSessionRef.current) {
+      activeSessionRef.current = null;
+      db.goOffline();
+      setGetInClassRoom(false);
+      setFSMPage('MULTIPLAYER_MODE_ERRORGOTDISCONNECTEDPAGE');
+    } else {
+      setFSMPage('MULTIPLAYER_MODE_ERROROTHERPAGE');
+    }
+  }
+
+  async function updateSession(path, data) {
+    if (!activeSessionRef.current) return false;
+    if (!firebaseConnectedRef.current) {
+      handleFirebaseFailure(new FirebaseUnavailableError());
+      return false;
+    }
+    try {
+      await withServerAck(db, () => db.ref(path).update(data));
+      return true;
+    } catch (error) {
+      handleFirebaseFailure(error);
+      return false;
+    }
+  }
+
+  async function endSession() {
+    const session = activeSessionRef.current;
+    activeSessionRef.current = null;
+    setGetInClassRoom(false);
+    if (!session) return true;
+    try {
+      await withServerAck(db, () => leaveRoom(session));
+      return true;
+    } catch (error) {
+      db.goOffline(); // onDisconnect remains registered when the explicit removal fails.
+      setFirebaseError(error?.message || 'Firebase could not confirm room cleanup.');
+      setFSMPage('MULTIPLAYER_MODE_ERRORGOTDISCONNECTEDPAGE');
+      return false;
+    }
+  }
   // MULTIPLAYER_MODE_
   // MULTIPLAYER_MODE_HOMEPAGE
   // MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE
@@ -213,18 +240,6 @@ export default function Multiplayer() {
     bluetoothDevice = null;
     setBluetoothDeviceName("Not connected");
     setIsBluetoothConnected(false);
-    // if (
-    //   !isHost &&
-    //   getInClassRoom &&
-    //   !gotAlreadyHostLeftDetected &&
-    //   groupPlayerName.trim() !== ""
-    // ) {
-    //   db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
-    //     deviceName: "Not connected",
-    //     distanceSensorValue: parseFloat((0).toFixed(3)),
-    //     parcelCorrectCount: 0,
-    //   });
-    // }
   }
 
   async function connectToBluetoothDevice() {
@@ -284,9 +299,7 @@ export default function Multiplayer() {
         !gotAlreadyHostLeftDetected &&
         groupPlayerName.trim() !== ""
       ) {
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .update({
+        await updateSession("gameSessions/" + getPIN + "/players/" + groupPlayerName, {
             deviceName: bluetoothDevice.name,
             parcelCorrectCount: 0,
           });
@@ -307,9 +320,7 @@ export default function Multiplayer() {
         !gotAlreadyHostLeftDetected &&
         groupPlayerName.trim() !== ""
       ) {
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .update({
+        await updateSession("gameSessions/" + getPIN + "/players/" + groupPlayerName, {
             deviceName: "Not connected",
             distanceSensorValue: parseFloat((0).toFixed(3)),
             parcelCorrectCount: 0,
@@ -347,9 +358,7 @@ export default function Multiplayer() {
         !gotAlreadyHostLeftDetected &&
         groupPlayerName.trim() !== ""
       ) {
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .update({
+        await updateSession("gameSessions/" + getPIN + "/players/" + groupPlayerName, {
             deviceName: "Not connected",
             distanceSensorValue: parseFloat((0).toFixed(3)),
             parcelCorrectCount: 0,
@@ -369,9 +378,7 @@ export default function Multiplayer() {
         !gotAlreadyHostLeftDetected &&
         groupPlayerName.trim() !== ""
       ) {
-        await db
-          .ref("gameSessions/" + getPIN + "/players/" + groupPlayerName)
-          .update({
+        await updateSession("gameSessions/" + getPIN + "/players/" + groupPlayerName, {
             deviceName: "Not connected",
             distanceSensorValue: parseFloat((0).toFixed(3)),
             parcelCorrectCount: 0,
@@ -428,9 +435,16 @@ export default function Multiplayer() {
       !gotAlreadyHostLeftDetected &&
       groupPlayerName.trim() !== ""
     ) {
-      db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
-        distanceSensorValue: parseFloat((result / 1000).toFixed(3)),
-      });
+      const now = Date.now();
+      if (now - lastDistanceWriteRef.current >= 500 && !distanceWriteInFlightRef.current) {
+        lastDistanceWriteRef.current = now;
+        distanceWriteInFlightRef.current = true;
+        updateSession("gameSessions/" + getPIN + "/players/" + groupPlayerName, {
+          distanceSensorValue: parseFloat((result / 1000).toFixed(3)),
+        }).finally(() => {
+          distanceWriteInFlightRef.current = false;
+        });
+      }
     }
   }
   async function sendCommand(data) {
@@ -501,12 +515,6 @@ export default function Multiplayer() {
   const [PIN, setPIN] = useState("");
   const [getPIN, setGetPIN] = useState("");
 
-  // eslint-disable-next-line
-  const [getSession, setGetSession] = useState({
-    data: null,
-    loading: true,
-    error: null,
-  });
   const [getInClassRoom, setGetInClassRoom] = useState(false);
   const [groupPlayerName, setGroupPlayerName] = useState("");
   const [roomHostName, setRoomHostName] = useState("");
@@ -515,125 +523,70 @@ export default function Multiplayer() {
 
   const [playersData, setPlayersData] = useState([]);
 
-  function JoinSession() {
+  async function JoinSession() {
+    setFirebaseError('');
     setIsHost(false);
     setGetInClassRoom(false);
-    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    function onSuccess(response) {
-      let data = response.val();
-      if (data) {
-        // if (data.gameAlreadyStarted) {
-        //   setFSMPage("MULTIPLAYER_MODE_ERRORGAMEALREADYSTARTEDPAGE");
-        // } else {
-        setGetPIN(PIN);
-        setFSMPage("MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE");
-        // }
-        setGetInClassRoom(true);
-      } else {
-        setGetInClassRoom(false);
-        setFSMPage("MULTIPLAYER_MODE_ERRORHOSTNOTFOUNDPAGE");
-      }
-    }
-
-    if (PIN && PIN.trim()) {
-      setGetInClassRoom(false);
-      setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-      get(setGetSession, "gameSessions/" + PIN, null, onSuccess, true);
-    } else {
-      setGetInClassRoom(false);
+    if (!validPin(PIN)) {
       setFSMPage("MULTIPLAYER_MODE_ERRORNEEDPINPAGE");
+      return;
+    }
+    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
+    try {
+      const room = await readRoom(db, PIN);
+      if (!room || !room.hostOnline) {
+        setFSMPage("MULTIPLAYER_MODE_ERRORHOSTNOTFOUNDPAGE");
+        return;
+      }
+      setGetPIN(PIN);
+      setFSMPage("MULTIPLAYER_MODE_PLAYER_FILLGROUPNAME_PAGE");
+    } catch (error) {
+      handleFirebaseFailure(error);
     }
   }
-  function checkGroupPlayerName() {
-    let nextStepGet = false;
-    function onSuccessHost() {
-      // let data = response.val();
-      // if (data.gameAlreadyStarted) {
-      //   setFSMPage("MULTIPLAYER_MODE_ERRORGAMEALREADYSTARTEDPAGE");
-      // } else {
-      nextStepGet = true;
-      // }
+  async function checkGroupPlayerName() {
+    setFirebaseError('');
+    if (!validPlayerName(groupPlayerName)) {
+      setFirebaseError('Use a group name of 1–40 characters without . # $ [ ] or /.');
+      setFSMPage("MULTIPLAYER_MODE_ERRORNEEDGROUPNAMEPLAYERPAGE");
+      return;
     }
-    function onSuccessPlayer(response) {
-      let data = response.val();
-      if (data) {
+    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
+    try {
+      const result = await joinRoom(db, getPIN, groupPlayerName);
+      if (result.status === 'room-not-found') {
+        setFSMPage("MULTIPLAYER_MODE_ERRORHOSTNOTFOUNDPAGE");
+      } else if (result.status === 'name-taken') {
         setFSMPage("MULTIPLAYER_MODE_ERRORPLAYERNAMETAKEN_PAGE");
       } else {
-        db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).set({
-          groupName: groupPlayerName,
-          deviceName: "Not connected",
-          parcelCorrectCount: 0,
-          distanceSensorValue: parseFloat((0).toFixed(3)),
-          timeFinishedRecord: "0 : 00 : 00",
-          isFinishedMission: "Not yet",
-        });
-        // resetStopwatch();
-        setFSMPage("MULTIPLAYER_MODE_PLAYER_CONTROLPANEL_PAGE");
-
+        activeSessionRef.current = result;
         setGetInClassRoom(true);
+        setFSMPage("MULTIPLAYER_MODE_PLAYER_CONTROLPANEL_PAGE");
       }
-    }
-    if (groupPlayerName && groupPlayerName.trim()) {
-      setGetInClassRoom(false);
-      setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-      get(setGetSession, "gameSessions/" + getPIN, null, onSuccessHost, true);
-      if (nextStepGet) {
-        get(
-          setGetSession,
-          "gameSessions/" + getPIN + "/players/" + groupPlayerName,
-          null,
-          onSuccessPlayer,
-          true
-        );
-      }
-    } else {
-      setGetInClassRoom(false);
-      setFSMPage("MULTIPLAYER_MODE_ERRORNEEDGROUPNAMEPLAYERPAGE");
+    } catch (error) {
+      handleFirebaseFailure(error);
     }
   }
   function CreateSession() {
     setIsHost(true);
     setFSMPage("MULTIPLAYER_MODE_HOST_FILLROOMNAME_PAGE");
   }
-  function checkRoomHostName() {
-    let generatedPin = Math.floor(Math.random() * (9999 - 100 + 1)) + 100;
-    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-    function onSuccess(response) {
-      let data = response.val();
-      // showPopupLoading();
-      if (data) {
-        checkRoomHostName();
-      } else {
-        // resetStopwatch();
-        db.ref("gameSessions/" + generatedPin.toString()).set({
-          // gameAlreadyStarted: false,
-          gameStarted: false,
-          timeIsActived: false,
-          timeIsPaused: false,
-          roomName: roomHostName,
-          hostOnline: true,
-          timeHours: "0",
-          timeMinutes: "00",
-          timeSeconds: "00",
-        });
-        setGetPIN(generatedPin.toString());
-        setFSMPage("MULTIPLAYER_MODE_HOST_CONTROLPANEL_PAGE");
-        setGetInClassRoom(true);
-      }
-    }
-    if (roomHostName && roomHostName.trim()) {
-      setGetInClassRoom(false);
-      setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
-      get(
-        setGetSession,
-        "gameSessions/" + generatedPin.toString(),
-        null,
-        onSuccess,
-        true
-      );
-    } else {
-      setGetInClassRoom(false);
+  async function checkRoomHostName() {
+    setFirebaseError('');
+    if (!roomHostName.trim()) {
       setFSMPage("MULTIPLAYER_MODE_ERRORNEEDROOMNAMEHOSTPAGE");
+      return;
+    }
+    setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
+    try {
+      const session = await createRoom(db, roomHostName.trim());
+      activeSessionRef.current = session;
+      setGetPIN(session.pin);
+      setIsHost(true);
+      setGetInClassRoom(true);
+      setFSMPage("MULTIPLAYER_MODE_HOST_CONTROLPANEL_PAGE");
+    } catch (error) {
+      handleFirebaseFailure(error);
     }
   }
 
@@ -674,6 +627,7 @@ export default function Multiplayer() {
     elapsedTime = 0;
     startTime = Date.now();
     clearInterval(intervalId);
+    lastPublishedSecondRef.current = null;
     setStopwatchElapsedTime({
       millisecondsElapsedTime: 0,
       secondsElapsedTime: 0,
@@ -726,11 +680,19 @@ export default function Multiplayer() {
         } else {
           seconds_str = String(seconds);
         }
-        if (isHost && getInClassRoom) {
-          db.ref("gameSessions/" + getPIN).update({
+        const currentSecond = `${hours_str}:${minutes_str}:${seconds_str}`;
+        if (
+          isHost && getInClassRoom && firebaseConnectedRef.current &&
+          currentSecond !== lastPublishedSecondRef.current && !timeWriteInFlightRef.current
+        ) {
+          lastPublishedSecondRef.current = currentSecond;
+          timeWriteInFlightRef.current = true;
+          updateSession("gameSessions/" + getPIN, {
             timeHours: hours_str,
             timeMinutes: minutes_str,
             timeSeconds: seconds_str,
+          }).finally(() => {
+            timeWriteInFlightRef.current = false;
           });
         }
       }, 10);
@@ -890,146 +852,99 @@ export default function Multiplayer() {
     }
 
     if (getInClassRoom) {
-      get(setGameData, "gameSessions/" + getPIN, null, onSuccess);
+      return get(setGameData, "gameSessions/" + getPIN, handleFirebaseFailure, onSuccess);
     }
+    return undefined;
   };
-  // eslint-disable-next-line
-  useLayoutEffect(fetchData, [getInClassRoom, getPIN]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(fetchData, [getInClassRoom, getPIN, isHost]);
   // ////console.log(gameData);
 
-  /* PORTRAIT RELATED CODE BEGIN */
-  // if (getInClassRoom && !isHost) {
-  if (gotStart && !isUserFinished) {
-    if (!gotAlreadyStart) {
-      setGotAlreadyStart(true);
-      // console.log("Start");
-      // startStopwatch();
-    }
-    setGotStart(false);
-  }
-  function TimeFinishedRecord() {
-    _hoursTimeFinishedRecord = String(stopwatchElapsedTime.hoursElapsedTime);
-    if (stopwatchElapsedTime.minutesElapsedTime < 10) {
-      _minutesTimeFinishedRecord =
-        "0" + String(stopwatchElapsedTime.minutesElapsedTime);
-    } else {
-      _minutesTimeFinishedRecord = String(
-        stopwatchElapsedTime.minutesElapsedTime
-      );
-    }
-    if (stopwatchElapsedTime.secondsElapsedTime < 10) {
-      _secondsTimeFinishedRecord =
-        "0" + String(stopwatchElapsedTime.secondsElapsedTime);
-    } else {
-      _secondsTimeFinishedRecord = String(
-        stopwatchElapsedTime.secondsElapsedTime
-      );
-    }
-    if (
-      !isHost &&
-      getInClassRoom &&
-      !gotAlreadyHostLeftDetected &&
-      groupPlayerName.trim() !== ""
-    ) {
-      db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
-        timeFinishedRecord:
-          _hoursTimeFinishedRecord +
-          " : " +
-          _minutesTimeFinishedRecord +
-          " : " +
-          _secondsTimeFinishedRecord,
-      });
-    }
-  }
-  if (gotStop && !isUserFinished) {
-    if (!gotAlreadyStop) {
-      setGotAlreadyStop(true);
-      // console.log("Stop");
-      // stopStopwatch();
-      TimeFinishedRecord();
-      sendCommand(stopCommand);
-    }
-    setGotStop(false);
-  }
-  if (gotReset) {
-    if (!gotAlreadyReset) {
-      setGotAlreadyReset(true);
-      // console.log("Reset");
-      resetStopwatch();
-      resetAllValue();
-      setIsUserFinished(false);
-      setIsUserAlreadyFinished(false);
-
-      if (
-        !isHost &&
-        getInClassRoom &&
-        !gotAlreadyHostLeftDetected &&
-        groupPlayerName.trim() !== ""
-      ) {
-        db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update(
-          {
-            timeFinishedRecord: "0 : 00 : 00",
-            parcelCorrectCount: 0,
-            distanceSensorValue: parseFloat((0).toFixed(3)),
-            isFinishedMission: "Not yet",
-          }
-        );
-      }
-    }
-    setGotReset(false);
-  }
-  if (isUserFinished) {
-    if (!isUserAlreadyFinished) {
-      setIsUserAlreadyFinished(true);
-      // stopStopwatch();
-      TimeFinishedRecord();
-      db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).update({
-        isFinishedMission: "OK",
-      });
-      sendCommand(stopCommand);
-    }
-  }
-  // else{
-  //   setStopwatchElapsedTime({
-  //     secondsElapsedTime: secondsTime,
-  //     minutesElapsedTime: minutesTime,
-  //     hoursElapsedTime: hoursTime,
-  //   })
-  // }
-  if (gotHostLeftDetected) {
-    if (!gotAlreadyHostLeftDetected) {
-      setGotAlreadyHostLeftDetected(true);
-      // console.log("Reset");
-      resetStopwatch();
-      disconnectToBluetoothDeviceImmediately();
-      db.ref("gameSessions/" + getPIN + "/players/" + groupPlayerName).remove();
-    }
-    setGotHostLeftDetected(false);
-  }
-  /* PORTRAIT RELATED CODE END */
-  /* BACK BUTTON DETECTION TO REMOVE DATA IN FIREBASE CODE BEGIN */
-  // useEffect(() => {
-  // eslint-disable-next-line
-  history.block(() => {
-    setIsExit(true);
-    clearInterval(intervalId);
-    resetStopwatch();
-    if (getInClassRoom) {
-      // resetStopwatch();
-      if (isHost) {
-        db.ref("gameSessions/" + getPIN).remove();
-      } else {
-        disconnectToBluetoothDeviceImmediately();
-        db.ref(
-          "gameSessions/" + getPIN + "/players/" + groupPlayerName
-        ).remove();
-      }
-    }
-    history.goForward();
+  const [finishedTimeParts, setFinishedTimeParts] = useState({
+    hours: '0', minutes: '00', seconds: '00',
   });
-  // });
-  /* BACK BUTTON DETECTION TO REMOVE DATA IN FIREBASE CODE END */
+  function recordFinishedTime() {
+    const parts = {
+      hours: String(stopwatchElapsedTime.hoursElapsedTime),
+      minutes: String(stopwatchElapsedTime.minutesElapsedTime).padStart(2, '0'),
+      seconds: String(stopwatchElapsedTime.secondsElapsedTime).padStart(2, '0'),
+    };
+    setFinishedTimeParts(parts);
+    return `${parts.hours} : ${parts.minutes} : ${parts.seconds}`;
+  }
 
+  useEffect(() => {
+    if (gotStart && !isUserFinished) {
+      if (!gotAlreadyStart) setGotAlreadyStart(true);
+      setGotStart(false);
+    }
+  }, [gotStart, isUserFinished, gotAlreadyStart]);
+
+  useEffect(() => {
+    if (gotStop && !isUserFinished) {
+      if (!gotAlreadyStop) {
+        setGotAlreadyStop(true);
+        const timeFinishedRecord = recordFinishedTime();
+        if (!isHost && getInClassRoom && !gotAlreadyHostLeftDetected) {
+          updateSession(`gameSessions/${getPIN}/players/${groupPlayerName}`, { timeFinishedRecord });
+        }
+        sendCommand(stopCommand);
+      }
+      setGotStop(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gotStop, isUserFinished, gotAlreadyStop]);
+
+  useEffect(() => {
+    if (gotReset) {
+      if (!gotAlreadyReset) {
+        setGotAlreadyReset(true);
+        resetStopwatch();
+        resetAllValue();
+        setIsUserFinished(false);
+        setIsUserAlreadyFinished(false);
+        setFinishedTimeParts({ hours: '0', minutes: '00', seconds: '00' });
+        if (!isHost && getInClassRoom && !gotAlreadyHostLeftDetected) {
+          updateSession(`gameSessions/${getPIN}/players/${groupPlayerName}`, {
+            timeFinishedRecord: '0 : 00 : 00',
+            parcelCorrectCount: 0,
+            distanceSensorValue: 0,
+            isFinishedMission: 'Not yet',
+          });
+        }
+      }
+      setGotReset(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gotReset, gotAlreadyReset]);
+
+  useEffect(() => {
+    if (isUserFinished && !isUserAlreadyFinished) {
+      setIsUserAlreadyFinished(true);
+      const timeFinishedRecord = recordFinishedTime();
+      if (!isHost && getInClassRoom && !gotAlreadyHostLeftDetected) {
+        updateSession(`gameSessions/${getPIN}/players/${groupPlayerName}`, {
+          timeFinishedRecord,
+          isFinishedMission: 'OK',
+        });
+      }
+      sendCommand(stopCommand);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isUserFinished, isUserAlreadyFinished]);
+
+  useEffect(() => {
+    if (gotHostLeftDetected) {
+      if (!gotAlreadyHostLeftDetected) {
+        setGotAlreadyHostLeftDetected(true);
+        resetStopwatch();
+        disconnectToBluetoothDeviceImmediately();
+        endSession();
+      }
+      setGotHostLeftDetected(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gotHostLeftDetected, gotAlreadyHostLeftDetected]);
   /* FETCHING DATA ON FIREBASE CONTROL CODE END */
   /* FINITE STATE MACHINE PAGE CODE BEGIN */
 
@@ -1060,7 +975,7 @@ export default function Multiplayer() {
                       size="lg"
                       color="primary"
                       variant="outline-danger"
-                      onClick={() => {
+                      onClick={async () => {
                         // onExitButtonEvent();
                         clearInterval(intervalId);
                         resetStopwatch();
@@ -1923,18 +1838,13 @@ export default function Multiplayer() {
                       size="lg"
                       color="primary"
                       variant="outline-danger"
-                      onClick={() => {
+                      onClick={async () => {
                         clearInterval(intervalId);
                         resetStopwatch();
                         clearInterval(intervalId);
                         resetStopwatch();
                         disconnectToBluetoothDeviceImmediately();
-                        db.ref(
-                          "gameSessions/" +
-                            getPIN +
-                            "/players/" +
-                            groupPlayerName
-                        ).remove();
+                        if (!(await endSession())) return;
                         history.goForward();
                         history.push("/");
                       }}
@@ -2226,9 +2136,9 @@ export default function Multiplayer() {
                         </div>
                       ) : (
                         <div>
-                          {_hoursTimeFinishedRecord} :{" "}
-                          {_minutesTimeFinishedRecord} :{" "}
-                          {_secondsTimeFinishedRecord}
+                          {finishedTimeParts.hours} :{" "}
+                          {finishedTimeParts.minutes} :{" "}
+                          {finishedTimeParts.seconds}
                         </div>
                       )}
                     </Row>
@@ -2666,7 +2576,7 @@ export default function Multiplayer() {
                       size="lg"
                       color="primary"
                       variant="outline-danger"
-                      onClick={() => {
+                      onClick={async () => {
                         // await sendCommand(restartCommand);
                         // onExitButtonPlayerEvent();
                         // setIsExit(true);
@@ -2677,12 +2587,7 @@ export default function Multiplayer() {
                         clearInterval(intervalId);
                         resetStopwatch();
                         disconnectToBluetoothDeviceImmediately();
-                        db.ref(
-                          "gameSessions/" +
-                            getPIN +
-                            "/players/" +
-                            groupPlayerName
-                        ).remove();
+                        if (!(await endSession())) return;
                         // history.push('/');
                         history.goForward();
                         history.push("/");
@@ -3230,9 +3135,9 @@ export default function Multiplayer() {
                         </div>
                       ) : (
                         <div>
-                          {_hoursTimeFinishedRecord} :{" "}
-                          {_minutesTimeFinishedRecord} :{" "}
-                          {_secondsTimeFinishedRecord}
+                          {finishedTimeParts.hours} :{" "}
+                          {finishedTimeParts.minutes} :{" "}
+                          {finishedTimeParts.seconds}
                         </div>
                       )}
                     </Row>
@@ -3544,15 +3449,16 @@ export default function Multiplayer() {
                     style={{ height: "100%", backgroundColor: "#FFFFFF" }}
                   >
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         setIsStartAdminButtonPressed(true);
                         if (getInClassRoom) {
-                          db.ref("gameSessions/" + getPIN).update({
+                          const saved = await updateSession("gameSessions/" + getPIN, {
                             // gameAlreadyStarted: true,
                             gameStarted: true,
                             timeIsActived: true,
                             timeIsPaused: false,
                           });
+                          if (!saved) return;
                         }
                         startStopwatch();
                         // sleep(stability_admin_control_timer_delay);
@@ -3578,15 +3484,16 @@ export default function Multiplayer() {
                     style={{ height: "100%", backgroundColor: "#FFFFFF" }}
                   >
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         setIsStopAdminButtonPressed(true);
                         if (getInClassRoom) {
-                          db.ref("gameSessions/" + getPIN).update({
+                          const saved = await updateSession("gameSessions/" + getPIN, {
                             // gameAlreadyStarted: true,
                             gameStarted: true,
                             timeIsActived: false,
                             timeIsPaused: true,
                           });
+                          if (!saved) return;
                         }
                         stopStopwatch();
                         // sleep(stability_admin_control_timer_delay);
@@ -3612,10 +3519,10 @@ export default function Multiplayer() {
                     style={{ height: "100%", backgroundColor: "#FFFFFF" }}
                   >
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         setIsResetAdminButtonPressed(true);
                         if (getInClassRoom) {
-                          db.ref("gameSessions/" + getPIN).update({
+                          const saved = await updateSession("gameSessions/" + getPIN, {
                             // gameAlreadyStarted: true,
                             gameStarted: false,
                             timeIsActived: false,
@@ -3624,6 +3531,7 @@ export default function Multiplayer() {
                             timeMinutes: "00",
                             timeSeconds: "00",
                           });
+                          if (!saved) return;
                         }
                         resetStopwatch();
                         // sleep(stability_admin_control_timer_delay);
@@ -3652,7 +3560,7 @@ export default function Multiplayer() {
                   >
                     <Button
                       variant="danger"
-                      onClick={() => {
+                      onClick={async () => {
                         // setIsExit(true);
                         // sleep(stability_exit_delay);
                         clearInterval(intervalId);
@@ -3663,7 +3571,8 @@ export default function Multiplayer() {
                         // setFSMPage("MULTIPLAYER_MODE_LOADINGPAGE");
                         clearInterval(intervalId);
                         resetStopwatch();
-                        db.ref("gameSessions/" + getPIN).remove();
+                        if (!(await endSession())) return;
+                        history.push("/");
                         // history.goForward();
                         // history.push("/");
                       }}
@@ -3709,6 +3618,7 @@ export default function Multiplayer() {
           >
             <DataGrid
               dataSource={playersData}
+              keyExpr="groupName"
               showBorders={true}
               onExporting={(e) => {
                 const workbook = new Workbook();
@@ -3731,19 +3641,23 @@ export default function Multiplayer() {
               onSaved={(e) => {
                 if (e.changes.length > 0) {
                   if (isHost && getInClassRoom) {
-                    db.ref(
+                    const change = e.changes[0];
+                    if (!validPlayerName(change.key) || !Number.isInteger(change.data.parcelCorrectCount) || change.data.parcelCorrectCount < 0) {
+                      setFirebaseError('Parcel count must be a non-negative whole number.');
+                      setFSMPage('MULTIPLAYER_MODE_ERROROTHERPAGE');
+                      return;
+                    }
+                    updateSession(
                       "gameSessions/" +
                         getPIN +
                         "/players/" +
-                        e.changes[0].data.groupName
-                    ).update({
-                      parcelCorrectCount: e.changes[0].data.parcelCorrectCount,
-                    });
+                        change.key,
+                      {
+                        parcelCorrectCount: change.data.parcelCorrectCount,
+                      }
+                    );
                   }
-                  // }
-                  // }
                 }
-                e.cancel = true;
               }}
             >
               <Sorting mode="multiple" />
@@ -3899,19 +3813,8 @@ export default function Multiplayer() {
                   <Button
                     size="lg"
                     variant="danger"
-                    onClick={() => {
-                      if (getInClassRoom) {
-                        if (isHost) {
-                          db.ref("gameSessions/" + getPIN).remove();
-                        } else {
-                          db.ref(
-                            "gameSessions/" +
-                              getPIN +
-                              "/players/" +
-                              groupPlayerName
-                          ).remove();
-                        }
-                      }
+                    onClick={async () => {
+                        if (!(await endSession())) return;
                       history.push("/");
                     }}
                     style={{ width: "75%" }}
@@ -3966,19 +3869,8 @@ export default function Multiplayer() {
                       size="sm"
                       color="primary"
                       variant="danger"
-                      onClick={() => {
-                        if (getInClassRoom) {
-                          if (isHost) {
-                            db.ref("gameSessions/" + getPIN).remove();
-                          } else {
-                            db.ref(
-                              "gameSessions/" +
-                                getPIN +
-                                "/players/" +
-                                groupPlayerName
-                            ).remove();
-                          }
-                        }
+                      onClick={async () => {
+                        if (!(await endSession())) return;
                         history.push("/");
                       }}
                     >
@@ -4157,9 +4049,7 @@ export default function Multiplayer() {
                   style={{ textAlign: "center", height: "20%" }}
                   xs={12}
                 >
-                  You've disconnected.
-                  <br />
-                  We're trying to reconnect you now.
+                  {firebaseError || 'Firebase disconnected. This room has ended. Reload the page to reconnect.'}
                 </Row>
                 <Row
                   className="p text-align-center p-1 mx-0"
@@ -4169,9 +4059,7 @@ export default function Multiplayer() {
                   <Button
                     size="lg"
                     variant="danger"
-                    onClick={() => {
-                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
-                    }}
+                    onClick={() => window.location.assign('/homepage')}
                     style={{ width: "75%" }}
                   >
                     <Row className="ph7 text-align-center" xs={12}>
@@ -4209,7 +4097,7 @@ export default function Multiplayer() {
                   style={{ height: "15%" }}
                   xs={12}
                 >
-                  You've disconnected. We're trying to reconnect you now.
+                  {firebaseError || 'Firebase disconnected. This room has ended. Reload the page to reconnect.'}
                 </Row>
                 <Row
                   className="p text-align-center p-1 mx-0"
@@ -4224,10 +4112,7 @@ export default function Multiplayer() {
                       size="sm"
                       color="primary"
                       variant="danger"
-                      onClick={() => {
-                        // setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
-                        history.push("/");
-                      }}
+                      onClick={() => window.location.assign('/homepage')}
                     >
                       <Row className="p3 text-align-center" xs={12}>
                         <FaHome />
@@ -4396,8 +4281,7 @@ export default function Multiplayer() {
                   style={{ textAlign: "center", height: "20%" }}
                   xs={12}
                 >
-                  You need to enter
-                  <br />a (group) name before you can play.
+                  {firebaseError || <>You need to enter<br />a (group) name before you can play.</>}
                 </Row>
                 <Row
                   className="p text-align-center p-1 mx-0"
@@ -4446,7 +4330,7 @@ export default function Multiplayer() {
                   style={{ height: "15%" }}
                   xs={12}
                 >
-                  You need to enter a (group) name before you can play.
+                  {firebaseError || 'You need to enter a (group) name before you can play.'}
                 </Row>
                 <Row
                   className="p text-align-center p-1 mx-0"
@@ -4869,7 +4753,7 @@ export default function Multiplayer() {
                   style={{ textAlign: "center", height: "20%" }}
                   xs={12}
                 >
-                  Something went wrong!
+                  {firebaseError || 'Something went wrong. No data was saved.'}
                 </Row>
                 <Row
                   className="p text-align-center p-1 mx-0"
@@ -4879,9 +4763,7 @@ export default function Multiplayer() {
                   <Button
                     size="lg"
                     variant="primary"
-                    onClick={() => {
-                      setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
-                    }}
+                    onClick={() => window.location.assign('/homepage')}
                     style={{ width: "75%" }}
                   >
                     <Row className="ph7 text-align-center" xs={12}>
@@ -4918,7 +4800,7 @@ export default function Multiplayer() {
                   style={{ height: "15%" }}
                   xs={12}
                 >
-                  Something went wrong!
+                  {firebaseError || 'Something went wrong. No data was saved.'}
                 </Row>
                 <Row
                   className="p text-align-center p-1 mx-0"
@@ -4933,9 +4815,7 @@ export default function Multiplayer() {
                       size="sm"
                       color="primary"
                       variant="danger"
-                      onClick={() => {
-                        setFSMPage("MULTIPLAYER_MODE_HOMEPAGE");
-                      }}
+                      onClick={() => window.location.assign('/homepage')}
                     >
                       <Row className="p3 text-align-center" xs={12}>
                         <FaHome />
